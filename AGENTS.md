@@ -4,9 +4,9 @@ Leia este arquivo primeiro. Cada módulo tem o próprio `AGENTS.md` com os detal
 
 ## O que é este projeto
 
-SaaS multi-tenant de gestão de agenda para barbearias: uma plataforma usada por várias barbearias (tenants), cada uma com seus barbeiros, clientes, horários, comandas e financeiro isolados ([`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md)). Hoje o sistema é um monorepo com uma API Laravel (`backend/`) e uma SPA Vue 3 (`frontend/`), com as Fases 1–3 do [roadmap](docs/ROADMAP_IMPLEMENTACAO.md) concluídas.
+SaaS multi-tenant de gestão de agenda para barbearias: uma plataforma usada por várias barbearias (tenants), cada uma com seus barbeiros, clientes, horários, comandas e financeiro isolados ([`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md)). O sistema é uma aplicação **Next.js full-stack** em `web/` (TypeScript, Prisma + PostgreSQL, Better Auth, shadcn/ui), com as Fases 1–3 do [roadmap](docs/ROADMAP_IMPLEMENTACAO.md) entregues.
 
-**Em migração:** o projeto está sendo levado para **Next.js full-stack** numa app nova em `web/`, construída em paralelo até a paridade. Depois do corte, `backend/` e `frontend/` serão removidos ([ADR-0001](docs/decisions/0001-migracao-full-stack-nextjs.md); tasks `TASK-0001`…`TASK-0019` em [`docs/tasks/`](docs/tasks/)).
+**Histórico:** o sistema nasceu como uma API Laravel (`backend/`) + SPA Vue 3 (`frontend/`) e foi migrado para Next.js com paridade funcional ([ADR-0001](docs/decisions/0001-migracao-full-stack-nextjs.md); tasks `TASK-0001`…`TASK-0019` em [`docs/tasks/`](docs/tasks/)). O legado foi removido; o código dele continua no histórico do Git, no commit `7446d48` (`git show 7446d48:backend/...`).
 
 ## Escopo atual e direção do projeto
 
@@ -16,18 +16,14 @@ Leia [`docs/SCOPE.md`](docs/SCOPE.md) antes de propor mudanças de arquitetura o
 
 | Diretório | Tipo | Descrição | Instruções |
 |---|---|---|---|
-| `backend/` | Projeto Composer (Laravel 13, PHP 8.3) | API REST + auth Sanctum + multi-tenancy. **Legado em migração**, mas é a referência de regras de negócio | [backend/AGENTS.md](backend/AGENTS.md) |
-| `frontend/` | Projeto npm (Vue 3 + Vite) | SPA do painel admin/prestador. **Legado em migração**, mas é a referência de telas | [frontend/AGENTS.md](frontend/AGENTS.md) |
-| `web/` | Projeto npm (Next.js 16, TypeScript) | App full-stack que substitui os dois acima — **em construção** (fundação pronta, `TASK-0001`–`0007`, toda a API no servidor (cadastros, agendamento, comandas, financeiro e dashboard, `TASK-0008`/`0009`/`0012`/`0014`/`0016`/`0017`), e todas as telas, `TASK-0010`/`0011`/`0013`/`0015`/`0018`; falta só o corte final, `TASK-0019`) | [web/AGENTS.md](web/AGENTS.md) |
+| `web/` | Projeto npm (Next.js 16, TypeScript) | A aplicação: API (Route Handlers), regras de negócio, multi-tenancy, autenticação e todas as telas do painel | [web/AGENTS.md](web/AGENTS.md) |
 | `docs/` | Documentação | Especificação, modelagem, roadmap, benchmark, ADRs (`decisions/`) e tasks (`tasks/`) | [docs/AGENTS.md](docs/AGENTS.md) |
 
-Não existe build raiz: cada módulo tem o seu próprio manifesto, sem workspaces npm nem orquestração entre eles.
+Não existe build raiz: o único projeto de código é `web/`, com o próprio `package.json`.
 
 ## Build
 
-- **Banco**: PostgreSQL em `127.0.0.1:5433`, banco `agenda_barbearia`. Ele **não** é provisionado por este repositório (sem `docker-compose`); segundo o roadmap, é o container Docker `esus-db`, compartilhado com outro projeto.
-- **backend**: `cd backend && php artisan migrate && php artisan db:seed && php artisan serve` (porta 8000). Testes: `composer test`. ⚠️ Confira `php -v` antes: sessões novas podem pegar o PHP 7.4 do PATH (ver [backend/AGENTS.md](backend/AGENTS.md)).
-- **frontend**: `cd frontend && npm install && npm run dev` (porta 3000; a URL da API `http://localhost:8000` está fixa em `src/api/axios.js`).
+- **Banco**: PostgreSQL em `127.0.0.1:5433` (bancos `agenda_web` e `agenda_web_test`). Ele **não** é provisionado por este repositório (sem `docker-compose`): é o container Docker `esus-db`, compartilhado com outro projeto. O banco do legado (`agenda_barbearia`) continua lá, sem uso.
 - **web**: `cd web && cp .env.example .env` (preencha, incluindo `BETTER_AUTH_SECRET`), depois `npm install && npm run db:deploy && npm run db:seed && npm run dev` (porta 3001; logins de dev em [web/AGENTS.md](web/AGENTS.md)). Bancos `agenda_web` e `agenda_web_test` no mesmo Postgres (porta 5433). Testes: `npm test` (Vitest; exige o Postgres no ar) e `npm run test:e2e` (Playwright com o Chrome instalado). Lint: `npm run lint`.
 
 ## Regras de padronização (obrigatórias para agentes de IA)
@@ -74,19 +70,18 @@ A ferramenta interna de tasks da sessão do agente organiza o trabalho *dentro* 
 
 ## Convenções gerais do projeto
 
-- **Versionamento**: não há fonte de versão do produto. `frontend/package.json` está em `0.0.0`, e o `composer.json` ainda tem o nome/descrição do skeleton Laravel.
-- **Commits**: o repositório ainda **não tem nenhum commit** (branch `master`; o branch principal configurado para PRs é `main`). Não há CONTRIBUTING. Use *Conventional Commits* com o footer `Task`/`Task-File`/`ADR`/`ADR-File`, conforme [`docs/AGENTS.md`](docs/AGENTS.md).
+- **Versionamento**: não há fonte de versão do produto (`web/package.json` está em `0.1.0`).
+- **Commits**: branch `master` (o branch principal configurado para PRs é `main`; nenhum remoto configurado ainda). O commit `7446d48` tem o estado completo com o legado; o seguinte remove o legado. Não há CONTRIBUTING. Use *Conventional Commits* com o footer `Task`/`Task-File`/`ADR`/`ADR-File`, conforme [`docs/AGENTS.md`](docs/AGENTS.md).
 - **CI**: nenhuma configuração de CI no repositório.
 - **Segredos**:
-  - `backend/.env` contém `APP_KEY` e a senha do banco reais. Está no `backend/.gitignore`, então não é versionado; nunca o adicione ao Git nem copie valores dele para docs.
-  - `backend/.env.example` só tem placeholders.
-  - `backend/database/seeders/*.php` contém senhas de dev em texto (`senha123` para os usuários semeados). Elas **serão versionadas** no primeiro commit. São aceitáveis só como dados de dev; nunca as reutilize num ambiente real.
-  - `backend/database/database.sqlite` existe localmente, mas é ignorado (`database/.gitignore`: `*.sqlite*`).
-- **Idioma do domínio**: entidades, tabelas e rotas estão em português (`agendamentos`, `comandas`, `barbeiros`). Na stack nova o domínio está em inglês e `Barbeiro` passou a ser `Professional` ([ADR-0003](docs/decisions/0003-camada-de-dados-prisma-schema-em-ingles.md); mapeamento completo em [web/AGENTS.md](web/AGENTS.md)).
+  - `web/.env` contém a senha do banco e o `BETTER_AUTH_SECRET` reais. Está no `web/.gitignore` (`.env*`, com exceção só para o `.env.example`); nunca o adicione ao Git nem copie valores dele para docs.
+  - `web/.env.example` só tem placeholders.
+  - `web/prisma/seed-data.ts` contém a senha de dev em texto (`senha123` para os usuários semeados), versionada de propósito. Aceitável só como dado de desenvolvimento; nunca reutilize num ambiente real.
+- **Idioma do domínio**: código, tabelas e API em inglês (`appointments`, `orders`, `professionals`); rotas de tela e textos de UI em pt-BR (`/agenda`, `/comandas`, "Barbeiros"). `Barbeiro` passou a ser `Professional` no código ([ADR-0003](docs/decisions/0003-camada-de-dados-prisma-schema-em-ingles.md); mapeamento completo em [web/AGENTS.md](web/AGENTS.md)).
 
 ## Por onde começar, dependendo da tarefa
 
-- **Trabalhar na migração para Next.js**: leia [ADR-0001](docs/decisions/0001-migracao-full-stack-nextjs.md) e escolha a próxima task elegível em [`docs/tasks/`](docs/tasks/), seguindo o algoritmo de seleção de [`docs/AGENTS.md`](docs/AGENTS.md). Para entender a regra que está sendo portada, use o [backend/AGENTS.md](backend/AGENTS.md) (servidor) e o [frontend/AGENTS.md](frontend/AGENTS.md) (telas).
-- **Corrigir algo no sistema atual**: [backend/AGENTS.md](backend/AGENTS.md) ou [frontend/AGENTS.md](frontend/AGENTS.md). Lembre que a correção provavelmente também precisa entrar na task correspondente da migração.
+- **Qualquer mudança de código** (API, regra de negócio, tela, banco): [web/AGENTS.md](web/AGENTS.md), que traz a estrutura, as convenções de API e de telas, a multi-tenancy, a autorização e os testes.
+- **Próximo trabalho**: escolha a próxima task elegível em [`docs/tasks/`](docs/tasks/) seguindo o algoritmo de seleção de [`docs/AGENTS.md`](docs/AGENTS.md). As tarefas adiadas (`TASK-0020`/`0021`) e a Fase 4 do roadmap ainda estão pela frente.
 - **Produto/escopo/modelagem**: [`docs/SCOPE.md`](docs/SCOPE.md), [`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md) e [`docs/MODELAGEM_BANCO.md`](docs/MODELAGEM_BANCO.md).
 - **Decisões e tasks**: [`docs/AGENTS.md`](docs/AGENTS.md).

@@ -153,3 +153,13 @@ Camada abstrata de canais (interface comum), Jobs em fila (Laravel Queue) para e
 
 **Passo 14 — Testes ponta a ponta e preparação para deploy**
 Percorrer os fluxos principais com cada papel de usuário (super_admin, admin, barbeiro, cliente). Ajustar variáveis de ambiente de produção. Build do Vue (`npm run build`).
+
+---
+
+## Atualização — 2026-10-03: migração para Next.js
+
+As Fases 1–3 acima foram implementadas originalmente em Laravel + Vue e depois **migradas para uma aplicação Next.js full-stack em `web/`**, com paridade funcional ([ADR-0001](decisions/0001-migracao-full-stack-nextjs.md); `TASK-0001`…`TASK-0019` em [`tasks/`](tasks/)). O legado (`backend/`, `frontend/`) foi removido e continua no histórico do Git (commit `7446d48`). Os caminhos e comandos citados nas fases acima (`php artisan`, `/backend`, `/frontend`) são históricos. Para a stack atual, veja o [`AGENTS.md`](../AGENTS.md) raiz e o [`web/AGENTS.md`](../web/AGENTS.md).
+
+Além da paridade, a migração trouxe correções e melhorias registradas nas ADRs 0003–0011: fuso horário por barbearia, travas contra agendamento duplo e contra fechar comanda duas vezes, estoque nunca negativo, uma comanda por agendamento, profissional desativado em vez de excluído, isolamento por tenant que inclui os horários de trabalho e data real de pagamento nas comissões.
+
+**Fase 4 — Notificações e finalização** continua pendente e será construída na stack nova.

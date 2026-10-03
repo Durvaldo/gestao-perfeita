@@ -1,5 +1,5 @@
 ---
-status: em-andamento
+status: concluida
 modulo: geral
 owner: Durvaldo Gonçalves Marques
 criado-em: 2026-10-03
@@ -25,11 +25,11 @@ Confirmar a paridade do `web/` com o sistema atual e fazer o corte: atualizar a 
 
 ## Critérios de conclusão
 
-- [ ] Checklist de paridade (tela por tela, regra por regra) registrado nesta task, comparando os dois sistemas lado a lado com o mesmo seed.
-- [ ] Teste ponta a ponta (smoke) do ciclo principal: login → agendar → abrir comanda → fechar → ver no financeiro e no dashboard. Registrar a ferramenta escolhida (ex.: Playwright).
-- [ ] Todo teste de `backend/tests/Feature/**` com equivalente no `web/`, ou com a ausência justificada aqui.
-- [ ] Confirmação do usuário obtida e `backend/`/`frontend/` removidos.
-- [ ] `AGENTS.md` raiz, `docs/SCOPE.md` (pedir ao usuário) e `docs/ROADMAP_IMPLEMENTACAO.md` atualizados para a stack nova; `backend/AGENTS.md` e `frontend/AGENTS.md` removidos junto com os módulos.
+- [x] Checklist de paridade (tela por tela, regra por regra) registrado nesta task, comparando os dois sistemas lado a lado com o mesmo seed.
+- [x] Teste ponta a ponta (smoke) do ciclo principal: login → agendar → abrir comanda → fechar → ver no financeiro e no dashboard. Registrar a ferramenta escolhida (ex.: Playwright).
+- [x] Todo teste de `backend/tests/Feature/**` com equivalente no `web/`, ou com a ausência justificada aqui.
+- [x] Confirmação do usuário obtida e `backend/`/`frontend/` removidos.
+- [x] `AGENTS.md` raiz, `docs/SCOPE.md` (pedir ao usuário) e `docs/ROADMAP_IMPLEMENTACAO.md` atualizados para a stack nova; `backend/AGENTS.md` e `frontend/AGENTS.md` removidos junto com os módulos.
 
 ## Referências
 
@@ -77,3 +77,4 @@ Confirmar a paridade do `web/` com o sistema atual e fazer o corte: atualizar a 
 Resultado atual: `npm test` 196 ✅ · `npm run test:e2e` 3 ✅ · `tsc`/`lint`/`build` ✅.
 
 **Pendente (human gate)**: confirmação explícita do responsável para remover `backend/` e `frontend/`. ⚠️ O repositório ainda **não tem nenhum commit**: apagar agora seria irreversível. Recomendação: fazer primeiro um commit com o estado atual (o legado fica preservado no histórico) e só então remover numa segunda etapa. Depois da remoção: atualizar `AGENTS.md` raiz, `docs/ROADMAP_IMPLEMENTACAO.md`, apagar `backend/AGENTS.md`/`frontend/AGENTS.md` junto com os módulos e pedir ao responsável a atualização do `docs/SCOPE.md`.
+- 2026-10-03 — Decisões do responsável: commit antes do corte e remoção em seguida; o agente faz os commits. Commit `7446d48` com o estado completo, incluindo o legado (preservado no histórico; 409 arquivos, revisados sem segredos: só `.env.example` com placeholders, `backend/.env` e `web/.env` ignorados). Em seguida, `backend/` e `frontend/` removidos (Git e disco, com `vendor/`, `node_modules/` e `backend/.env`; o banco `agenda_barbearia` no Postgres não foi tocado). Docs atualizados para a stack final: `AGENTS.md` raiz (contexto, tabela de estrutura, build, convenções, segredos e roteamento), `web/AGENTS.md` (propósito, com ponteiro para o legado no commit `7446d48`), `docs/ROADMAP_IMPLEMENTACAO.md` (seção de atualização da migração; Fase 4 pendente), `docs/AGENTS.md` (`REFORMULACAO_FRONTEND.md` marcado como histórico). `backend/AGENTS.md` e `frontend/AGENTS.md` saíram junto com os módulos. Referências ao legado em `docs/tasks/` e `docs/decisions/` foram mantidas como histórico, de propósito. Verificado depois da remoção: nenhum arquivo do `web/` depende do legado; `npm test` 196 ✅, `npm run test:e2e` 3 ✅, `tsc`/`lint`/`build` ✅. **Pendente com o responsável**: atualizar o `docs/SCOPE.md` (mantido pelo usuário; ainda descreve a migração como direção futura) e decidir se o profissional deve continuar vendo o dashboard da barbearia inteira (nota da `TASK-0017`).

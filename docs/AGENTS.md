@@ -523,6 +523,6 @@ Este projeto não usa specs formais (`docs/specs/`). A camada equivalente a "sco
 - [`docs/MODELAGEM_BANCO.md`](MODELAGEM_BANCO.md) — pré-modelagem do banco (PostgreSQL).
 - [`docs/ROADMAP_IMPLEMENTACAO.md`](ROADMAP_IMPLEMENTACAO.md) — roadmap original por fases, com checklist de progresso.
 - [`docs/PLANO_MELHORIAS_BENCHMARK.md`](PLANO_MELHORIAS_BENCHMARK.md) — evolução do produto pós-benchmark (com base em [`ANALISE_CONCORRENTE_AGEENDLY.md`](ANALISE_CONCORRENTE_AGEENDLY.md)).
-- [`docs/REFORMULACAO_FRONTEND.md`](REFORMULACAO_FRONTEND.md) — padrões visuais do frontend Vue atual.
+- [`docs/REFORMULACAO_FRONTEND.md`](REFORMULACAO_FRONTEND.md) — padrões visuais do antigo frontend Vue (histórico; o frontend Vue foi removido, ver `TASK-0019`).
 
 Registros persistentes: decisões em [`docs/decisions/`](decisions/) (regra 2 do [`AGENTS.md` raiz](../AGENTS.md)) e tasks em [`docs/tasks/`](tasks/) (regra 4).

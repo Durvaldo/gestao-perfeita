@@ -16,7 +16,7 @@ Ver também o [AGENTS.md raiz](../AGENTS.md).
 
 ## Propósito
 
-Substituir `backend/` (Laravel) e `frontend/` (Vue) por uma única aplicação Next.js ([ADR-0001](../docs/decisions/0001-migracao-full-stack-nextjs.md)). O objetivo é **paridade** com o sistema atual: as regras de negócio estão em [`backend/AGENTS.md`](../backend/AGENTS.md) e as telas em [`frontend/AGENTS.md`](../frontend/AGENTS.md). As tasks da migração ficam em [`docs/tasks/`](../docs/tasks/).
+Aplicação Next.js full-stack do sistema. Ela substituiu `backend/` (Laravel) e `frontend/` (Vue) com paridade funcional ([ADR-0001](../docs/decisions/0001-migracao-full-stack-nextjs.md)). O legado foi removido (`TASK-0019`) e continua no histórico do Git, no commit `7446d48`, para consulta (`git show 7446d48:backend/app/...`). As tasks ficam em [`docs/tasks/`](../docs/tasks/).
 
 Estado atual: scaffold (`TASK-0001`), camada de dados (`TASK-0002`: Prisma, schema completo, migration inicial) e seed de desenvolvimento (`TASK-0003`) autenticação (`TASK-0004`: Better Auth, login/logout/sessão por API) isolamento por tenant (`TASK-0005`) autorização por papel (`TASK-0006`) convenções da camada de servidor (`TASK-0007`) cadastros de clientes, serviços e produtos (`TASK-0008`) de profissionais e horários de trabalho (`TASK-0009`), agendamento (`TASK-0012`), comandas (`TASK-0014`), financeiro (`TASK-0016`) e dashboard (`TASK-0017`) no servidor (toda a API do legado está portada); casca da UI com login, layout e componentes base (`TASK-0010`) e todas as telas do painel: cadastros (`TASK-0011`), agenda (`TASK-0013`), comandas (`TASK-0015`), financeiro e dashboard (`TASK-0018`).
 
