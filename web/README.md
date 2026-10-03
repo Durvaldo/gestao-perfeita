@@ -1,6 +1,6 @@
 # web
 
-Aplicação Next.js full-stack que substitui `backend/` (Laravel) e `frontend/` (Vue) — ver [ADR-0001](../docs/decisions/0001-migracao-full-stack-nextjs.md).
+Aplicação Next.js full-stack do projeto (substituiu o antigo Laravel + Vue) — ver [ADR-0001](../docs/decisions/0001-migracao-full-stack-nextjs.md).
 
 ```bash
 npm install
