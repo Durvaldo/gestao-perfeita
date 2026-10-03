@@ -71,7 +71,7 @@ A ferramenta interna de tasks da sessão do agente organiza o trabalho *dentro* 
 ## Convenções gerais do projeto
 
 - **Versionamento**: não há fonte de versão do produto (`web/package.json` está em `0.1.0`).
-- **Commits**: branch `master` (o branch principal configurado para PRs é `main`; nenhum remoto configurado ainda). O commit `7446d48` tem o estado completo com o legado; o seguinte remove o legado. Não há CONTRIBUTING. Use *Conventional Commits* com o footer `Task`/`Task-File`/`ADR`/`ADR-File`, conforme [`docs/AGENTS.md`](docs/AGENTS.md).
+- **Commits**: branch principal `main`, remoto `origin` = `https://github.com/Durvaldo/gestao-perfeita.git`. O commit `7446d48` tem o estado completo com o legado; o seguinte remove o legado. Não há CONTRIBUTING. Use *Conventional Commits* com o footer `Task`/`Task-File`/`ADR`/`ADR-File`, conforme [`docs/AGENTS.md`](docs/AGENTS.md).
 - **CI**: nenhuma configuração de CI no repositório.
 - **Segredos**:
   - `web/.env` contém a senha do banco e o `BETTER_AUTH_SECRET` reais. Está no `web/.gitignore` (`.env*`, com exceção só para o `.env.example`); nunca o adicione ao Git nem copie valores dele para docs.
