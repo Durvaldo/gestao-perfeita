@@ -1,0 +1,434 @@
+// Data model for the Next.js app. Ported from backend/database/migrations (Laravel),
+// with English names (ADR-0003) and Barbeiro renamed to Professional.
+// Legacy name mapping: web/AGENTS.md, "Mapeamento de nomes".
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TenantStatus {
+  active
+  suspended
+  trial
+
+  @@map("tenant_status")
+}
+
+enum UserRole {
+  super_admin
+  admin
+  professional
+  customer
+
+  @@map("user_role")
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+
+  @@map("appointment_status")
+}
+
+enum PaymentMethod {
+  cash
+  pix
+  debit_card
+  credit_card
+
+  @@map("payment_method")
+}
+
+enum OrderStatus {
+  open
+  paid
+  cancelled
+
+  @@map("order_status")
+}
+
+enum OrderItemType {
+  service
+  product
+
+  @@map("order_item_type")
+}
+
+enum FinancialEntryType {
+  income
+  expense
+
+  @@map("financial_entry_type")
+}
+
+model Plan {
+  id               Int      @id @default(autoincrement())
+  name             String
+  description      String?
+  monthlyPrice     Decimal  @map("monthly_price") @db.Decimal(10, 2)
+  maxProfessionals Int?     @map("max_professionals")
+  maxCustomers     Int?     @map("max_customers")
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  tenants Tenant[]
+
+  @@map("plans")
+}
+
+model Tenant {
+  id          Int          @id @default(autoincrement())
+  planId      Int          @map("plan_id")
+  name        String
+  slug        String       @unique
+  taxId       String?      @map("tax_id")
+  phone       String?
+  address     String?
+  logoUrl     String?      @map("logo_url")
+  status      TenantStatus @default(trial)
+  trialEndsAt DateTime?    @map("trial_ends_at")
+  // IANA time zone of the barbershop: working hours, weekdays and naive
+  // date-times sent by the UI are interpreted in it (ADR-0009).
+  timezone    String       @default("America/Sao_Paulo")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  plan             Plan             @relation(fields: [planId], references: [id])
+  users            User[]
+  customers        Customer[]
+  professionals    Professional[]
+  services         Service[]
+  products         Product[]
+  scheduleBlocks   ScheduleBlock[]
+  appointments     Appointment[]
+  orders           Order[]
+  financialEntries FinancialEntry[]
+
+  @@map("tenants")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  // Null only for super_admin (cross-tenant).
+  tenantId      Int?     @map("tenant_id")
+  // Default kept from the legacy schema. Public sign-up is disabled (ADR-0004),
+  // so users are only created by the seed or by app code that sets the role.
+  role          UserRole @default(admin)
+  name          String
+  email         String   @unique
+  phone         String?
+  // Fields below (emailVerified, image) are required by Better Auth (ADR-0004).
+  emailVerified Boolean  @default(false) @map("email_verified")
+  image         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant              Tenant?       @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  customers           Customer[]
+  professional        Professional?
+  createdAppointments Appointment[] @relation("AppointmentCreatedBy")
+  sessions            Session[]
+  accounts            Account[]
+
+  @@map("users")
+}
+
+// Better Auth tables (ADR-0004). Field names follow Better Auth's core schema.
+model Session {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// Login methods of a user. Email/password logins use providerId "credential",
+// with the password hash in `password` (it does not live on users).
+model Account {
+  id                    Int       @id @default(autoincrement())
+  userId                Int       @map("user_id")
+  providerId            String    @map("provider_id")
+  accountId             String    @map("account_id")
+  password              String?
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         Int      @id @default(autoincrement())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+model Customer {
+  id        Int       @id @default(autoincrement())
+  tenantId  Int       @map("tenant_id")
+  userId    Int?      @map("user_id")
+  name      String
+  phone     String
+  email     String?
+  birthDate DateTime? @map("birth_date") @db.Date
+  notes     String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointments Appointment[]
+  orders       Order[]
+
+  @@index([tenantId])
+  @@map("customers")
+}
+
+model Professional {
+  id                    Int      @id @default(autoincrement())
+  tenantId              Int      @map("tenant_id")
+  // One user account per professional. The legacy schema did not enforce this
+  // at the database level, but the app always created exactly one.
+  userId                Int      @unique @map("user_id")
+  defaultCommissionRate Decimal  @default(0) @map("default_commission_rate") @db.Decimal(5, 2)
+  photoUrl              String?  @map("photo_url")
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  tenant         Tenant                @relation(fields: [tenantId], references: [id])
+  user           User                  @relation(fields: [userId], references: [id])
+  services       ProfessionalService[]
+  workingHours   WorkingHour[]
+  scheduleBlocks ScheduleBlock[]
+  appointments   Appointment[]
+  orders         Order[]
+
+  @@index([tenantId])
+  @@map("professionals")
+}
+
+model Service {
+  id              Int      @id @default(autoincrement())
+  tenantId        Int      @map("tenant_id")
+  name            String
+  description     String?
+  durationMinutes Int      @map("duration_minutes")
+  price           Decimal  @db.Decimal(10, 2)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant                @relation(fields: [tenantId], references: [id])
+  professionals ProfessionalService[]
+  appointments  AppointmentService[]
+  orderItems    OrderItem[]
+
+  @@index([tenantId])
+  @@map("services")
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int      @map("tenant_id")
+  name          String
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  // Null means stock is not tracked for this product.
+  stockQuantity Int?     @map("stock_quantity")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id])
+  orderItems OrderItem[]
+
+  @@index([tenantId])
+  @@map("products")
+}
+
+// Per-professional overrides for a service.
+model ProfessionalService {
+  professionalId Int      @map("professional_id")
+  serviceId      Int      @map("service_id")
+  commissionRate Decimal? @map("commission_rate") @db.Decimal(5, 2)
+  customPrice    Decimal? @map("custom_price") @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  service      Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([professionalId, serviceId])
+  @@map("professional_services")
+}
+
+// No tenant_id: scoped through the professional (same as the legacy horarios_trabalho).
+model WorkingHour {
+  id             Int      @id @default(autoincrement())
+  professionalId Int      @map("professional_id")
+  // 0 = Sunday ... 6 = Saturday (same convention as PHP's date('w')).
+  weekday        Int      @db.SmallInt
+  startTime      DateTime @map("start_time") @db.Time(0)
+  endTime        DateTime @map("end_time") @db.Time(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, weekday])
+  @@map("working_hours")
+}
+
+model ScheduleBlock {
+  id             Int      @id @default(autoincrement())
+  tenantId       Int      @map("tenant_id")
+  // Null blocks the whole tenant.
+  professionalId Int?     @map("professional_id")
+  startsAt       DateTime @map("starts_at")
+  endsAt         DateTime @map("ends_at")
+  reason         String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  professional Professional? @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("schedule_blocks")
+}
+
+model Appointment {
+  id              Int               @id @default(autoincrement())
+  tenantId        Int               @map("tenant_id")
+  customerId      Int               @map("customer_id")
+  professionalId  Int               @map("professional_id")
+  startsAt        DateTime          @map("starts_at")
+  endsAt          DateTime          @map("ends_at")
+  status          AppointmentStatus @default(pending)
+  createdByUserId Int               @map("created_by_user_id")
+  notes           String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id])
+  customer     Customer             @relation(fields: [customerId], references: [id])
+  professional Professional         @relation(fields: [professionalId], references: [id])
+  createdBy    User                 @relation("AppointmentCreatedBy", fields: [createdByUserId], references: [id])
+  services     AppointmentService[]
+  orders       Order[]
+
+  @@index([tenantId])
+  @@index([professionalId, startsAt])
+  @@map("appointments")
+}
+
+model AppointmentService {
+  appointmentId  Int      @map("appointment_id")
+  serviceId      Int      @map("service_id")
+  // Service price frozen when the appointment was booked.
+  priceAtBooking Decimal  @map("price_at_booking") @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  service     Service     @relation(fields: [serviceId], references: [id])
+
+  @@id([appointmentId, serviceId])
+  @@map("appointment_services")
+}
+
+// Legacy "comanda": the bill opened for a customer visit.
+model Order {
+  id             Int            @id @default(autoincrement())
+  tenantId       Int            @map("tenant_id")
+  appointmentId  Int?           @map("appointment_id")
+  customerId     Int            @map("customer_id")
+  professionalId Int            @map("professional_id")
+  totalAmount    Decimal        @default(0) @map("total_amount") @db.Decimal(10, 2)
+  paymentMethod  PaymentMethod? @map("payment_method")
+  status         OrderStatus    @default(open)
+  // New column (not in the legacy schema): set when the order is paid. The
+  // legacy commission report used updated_at as the payment date (ADR-0003).
+  paidAt         DateTime?      @map("paid_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  appointment  Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  customer     Customer     @relation(fields: [customerId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+  items        OrderItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, status, paidAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int           @id @default(autoincrement())
+  orderId    Int           @map("order_id")
+  type       OrderItemType
+  serviceId  Int?          @map("service_id")
+  productId  Int?          @map("product_id")
+  quantity   Int           @default(1)
+  unitPrice  Decimal       @map("unit_price") @db.Decimal(10, 2)
+  totalPrice Decimal       @map("total_price") @db.Decimal(10, 2)
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model FinancialEntry {
+  id          Int                @id @default(autoincrement())
+  tenantId    Int                @map("tenant_id")
+  type        FinancialEntryType
+  category    String
+  description String?
+  amount      Decimal            @db.Decimal(10, 2)
+  entryDate   DateTime           @map("entry_date") @db.Date
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, entryDate])
+  @@map("financial_entries")
+}
