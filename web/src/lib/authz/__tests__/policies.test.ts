@@ -24,6 +24,7 @@ const matrix: Record<string, Record<string, Expectation>> = {
   workingHour: { viewAny: "own", view: "own", create: "own", update: "own", delete: "own" },
   appointment: { viewAny: "staff", view: "own", create: "staff", assignTo: "own", update: "own", delete: "admin" },
   order: { viewAny: "staff", view: "own", create: "staff", createFor: "own", update: "own" },
+  scheduleBlock: { viewAny: "staff", view: "own", create: "own", update: "own", delete: "own" },
   financialEntry: { viewAny: "admin", view: "admin", create: "admin", update: "admin", delete: "admin" },
   dashboard: { view: "staff" },
 };
@@ -92,5 +93,18 @@ describe("guards", () => {
     expect(() => authorize(professional, "financialEntry", "viewAny")).toThrow(ForbiddenError);
     expect(() => authorize(professional, "order", "update", others)).toThrow(ForbiddenError);
     expect(() => authorize(professional, "order", "update", own)).not.toThrow();
+  });
+});
+
+describe("schedule exceptions of the whole barbershop (SPEC-0004)", () => {
+  const admin: Actor = { id: 1, role: "admin", professional: null };
+  const professional: Actor = { id: 2, role: "professional", professional: { id: 10 } };
+  const wholeShop = { professionalId: null };
+
+  test("every staff member sees them, only the admin manages them", () => {
+    expect(can(professional, "scheduleBlock", "view", wholeShop)).toBe(true);
+    expect(can(professional, "scheduleBlock", "create", wholeShop)).toBe(false);
+    expect(can(professional, "scheduleBlock", "delete", wholeShop)).toBe(false);
+    expect(can(admin, "scheduleBlock", "create", wholeShop)).toBe(true);
   });
 });

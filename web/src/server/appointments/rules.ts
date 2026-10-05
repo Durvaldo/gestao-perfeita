@@ -35,6 +35,21 @@ export async function isWithinWorkingHours(professionalId: number, start: Date, 
 }
 
 /**
+ * The first schedule exception (SPEC-0004) that overlaps [start, end), either
+ * the professional's own or the whole barbershop's, or null when the slot is open.
+ */
+export async function findBlockingException(professionalId: number, start: Date, end: Date) {
+  return db.scheduleBlock.findFirst({
+    where: {
+      OR: [{ professionalId }, { professionalId: null }],
+      startsAt: { lt: end },
+      endsAt: { gt: start },
+    },
+    orderBy: { startsAt: "asc" },
+  });
+}
+
+/**
  * Whether another non-cancelled appointment of the same professional overlaps
  * [start, end) (legacy Agendamento::conflita). Run inside the transaction that
  * writes, after lockProfessionalSchedule().

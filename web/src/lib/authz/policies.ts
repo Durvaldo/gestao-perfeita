@@ -24,6 +24,12 @@ const ownsRecord = (actor: Actor, subject: OwnedByProfessional) =>
 
 const adminOrOwner: Rule<OwnedByProfessional> = (actor, subject) => isAdmin(actor) || ownsRecord(actor, subject);
 
+/** A schedule exception: of one professional, or of the whole barbershop (null). */
+type ScheduleBlockSubject = { professionalId: number | null };
+const ownsBlock = (actor: Actor, subject: ScheduleBlockSubject) =>
+  subject.professionalId !== null && ownsRecord(actor, { professionalId: subject.professionalId });
+const adminOrOwnBlock: Rule<ScheduleBlockSubject> = (actor, subject) => isAdmin(actor) || ownsBlock(actor, subject);
+
 // Catalog-like resources: staff can read, only admins can write.
 const catalogPolicy = {
   viewAny: isStaff,
@@ -72,6 +78,17 @@ export const policies = {
     // allowed any professional). Subject: the order's professional.
     createFor: adminOrOwner,
     update: adminOrOwner,
+  },
+  // Schedule exceptions (SPEC-0004). Subject: { professionalId }, null = the whole
+  // barbershop. Every staff member sees the barbershop's; a professional manages
+  // only their own, without approval (Q2); only admins close the whole barbershop.
+  scheduleBlock: {
+    viewAny: isStaff,
+    view: (actor: Actor, subject: ScheduleBlockSubject) =>
+      isAdmin(actor) || (isStaff(actor) && subject.professionalId === null) || ownsBlock(actor, subject),
+    create: adminOrOwnBlock,
+    update: adminOrOwnBlock,
+    delete: adminOrOwnBlock,
   },
   financialEntry: {
     viewAny: isAdmin,

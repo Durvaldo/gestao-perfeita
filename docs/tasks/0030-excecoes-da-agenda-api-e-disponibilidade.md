@@ -1,5 +1,5 @@
 ---
-status: em-andamento
+status: concluida
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
@@ -23,10 +23,10 @@ Implementar o RF-1 e o RF-2 da [SPEC-0004](../specs/SPEC-0004.md):
 
 ## Critérios de conclusão
 
-- [ ] Rotas `/api/schedule-blocks` (listar por período e profissional, criar, editar, excluir), com policy (só o admin cria exceção da barbearia inteira) e validação de fim depois do início.
-- [ ] Checagem de disponibilidade centralizada em `web/src/server/appointments/`; criar dentro de uma exceção do profissional ou da barbearia → 422, inclusive para o admin.
-- [ ] Testes: CRUD, permissões por papel, isolamento por tenant e os três motivos de recusa; `npm test` e `npm run lint` passando.
-- [ ] ADR, se a forma da checagem de disponibilidade envolver uma escolha real entre alternativas.
+- [x] Rotas `/api/schedule-blocks` (listar por período e profissional, criar, editar, excluir), com policy (só o admin cria exceção da barbearia inteira) e validação de fim depois do início.
+- [x] Checagem de disponibilidade centralizada em `web/src/server/appointments/`; criar dentro de uma exceção do profissional ou da barbearia → 422, inclusive para o admin.
+- [x] Testes: CRUD, permissões por papel, isolamento por tenant e os três motivos de recusa; `npm test` e `npm run lint` passando.
+- [x] ADR, se a forma da checagem de disponibilidade envolver uma escolha real entre alternativas.
 
 ## Referências
 
@@ -38,3 +38,4 @@ Implementar o RF-1 e o RF-2 da [SPEC-0004](../specs/SPEC-0004.md):
 
 - 2026-10-04 — Criada bloqueada: a SPEC-0004 precisa de refinamento, e a policy depende da Q2.
 - 2026-10-04 — Desbloqueada: o responsável respondeu às questões pendentes (ver "Decisões do responsável" na SPEC de origem).
+- 2026-10-04 — Implementado ([ADR-0012](../decisions/0012-excecoes-da-agenda-representacao-e-checagem.md)). `src/server/schedule-blocks/schedule-blocks.ts` + rotas `/api/schedule-blocks` e `/api/schedule-blocks/[id]`: criar (dia inteiro com `startDate`/`endDate` inclusivos, ou período no mesmo dia com `startsAt`/`endsAt`), listar por período e profissional (o profissional vê as dele e as da barbearia), ver, editar e excluir. As respostas trazem `affectedAppointments`, os agendamentos que agora "precisam de ação" (Q1, calculado pela sobreposição). Policy `scheduleBlock`: o profissional gerencia só as dele, sem aprovação (Q2); exceção da barbearia é só do admin. Disponibilidade: `findBlockingException` em `rules.ts`, chamada em `resolveSchedule` depois do expediente; recusa criar e remarcar, inclusive o admin, com "Agenda fechada neste período: {motivo}."; atualização só de status continua livre. Sem migration: o schema já tinha a tabela. Testes: 10 novos de API e de disponibilidade, a matriz de policies e um teste das exceções da barbearia. Verificado: `npm test` (244), `npm run lint` e `npx tsc --noEmit`.

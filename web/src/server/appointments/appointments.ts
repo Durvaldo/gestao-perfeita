@@ -13,7 +13,7 @@ import { pageFromRequest, paginate } from "@/server/http/pagination";
 import { assertReferencesInTenant } from "@/server/http/references";
 import { apiRoute, created, noContent } from "@/server/http/route";
 import { parseBody, parseQuery } from "@/server/http/validation";
-import { hasConflict, isWithinWorkingHours, lockProfessionalSchedule, startsInThePast } from "./rules";
+import { findBlockingException, hasConflict, isWithinWorkingHours, lockProfessionalSchedule, startsInThePast } from "./rules";
 
 // Legacy: AgendamentoRequest + AgendamentoController + Agendamento model.
 
@@ -111,6 +111,14 @@ async function resolveSchedule(
     }
     if (!(await isWithinWorkingHours(input.professionalId, start, end, timeZone))) {
       throw ValidationError.field("startsAt", "O horário está fora do expediente do barbeiro.");
+    }
+    // Schedule exceptions (SPEC-0004) close the slot for everyone, admins included.
+    const exception = await findBlockingException(input.professionalId, start, end);
+    if (exception) {
+      throw ValidationError.field(
+        "startsAt",
+        exception.reason ? `Agenda fechada neste período: ${exception.reason}.` : "Agenda fechada neste período.",
+      );
     }
   }
 

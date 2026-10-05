@@ -223,6 +223,7 @@ try {
 | `/api/financial-report` | GET | só admin; `?from=&to=` (`YYYY-MM-DD`, padrão: mês corrente no fuso da barbearia) → `{ period, totalIncome, totalExpenses, balance, commissionsByProfessional[{ professionalId, professionalName, commission }] }` (valores como `"0.00"`) |
 | `/api/dashboard` | GET | admin (a barbearia inteira) e profissional (só os dados dele, SPEC-0001) → `{ bestSellingProducts, bestSellingServices, professionalRanking, topCustomers, upcomingBirthdays }`; faturamento só de comandas pagas; `topCustomers` conta atendimentos: agendamentos concluídos + comandas pagas não contadas por um agendamento concluído (SPEC-0003) |
 | `/api/appointments`, `/api/appointments/[id]` | GET, POST / GET, PUT, PATCH, DELETE | `?from=&to=` → lista completa por sobreposição (sem paginação); `?professionalId=`; `startsAt` sem offset = fuso da barbearia; o fim vem das durações; só o admin exclui |
+| `/api/schedule-blocks`, `/api/schedule-blocks/[id]` | GET, POST / GET, PUT, PATCH, DELETE | exceções da agenda ([ADR-0012](../docs/decisions/0012-excecoes-da-agenda-representacao-e-checagem.md)): `{ professionalId | null, allDay, startDate/endDate | startsAt/endsAt, reason }`; `?from=&to=&professionalId=`; o profissional vê as dele e as da barbearia e gerencia só as dele; resposta com `affectedAppointments` |
 
 Leitura: admin e profissional, menos `/api/professionals` e os horários, em que o profissional só vê o que é dele (SPEC-0001). Escrita: só admin (exceto horários, que o próprio profissional também edita). Listas paginadas (`?page=`, 15 por página, mais recentes primeiro), menos a de horários, que vem completa e ordenada por dia.
 
@@ -242,6 +243,7 @@ Leitura: admin e profissional, menos `/api/professionals` e os horários, em que
 - Entrada sem offset (`"2030-01-10T10:00"`, do `datetime-local`) = relógio local da barbearia → `parseDateTimeInput(value, timeZone)`. Na exibição, formate com `timeZone` da barbearia, nunca com o fuso do navegador.
 - Expediente e dia da semana são sempre calculados no fuso da barbearia (`isWithinWorkingHours`).
 - Criar ou editar agendamento: transação + `lockProfessionalSchedule` + `hasConflict` (evita agendamento duplo concorrente). Profissional inativo não recebe agendamento novo.
+- Exceções da agenda ([SPEC-0004](../docs/specs/SPEC-0004.md), [ADR-0012](../docs/decisions/0012-excecoes-da-agenda-representacao-e-checagem.md)): criar ou remarcar dentro de uma exceção do profissional ou da barbearia → 422 "Agenda fechada neste período: {motivo}." (`findBlockingException`), inclusive para o admin. A atualização só de status continua livre.
 - Sem agendamento retroativo ([SPEC-0003](../docs/specs/SPEC-0003.md)): criar, ou mudar o início de um agendamento, para antes de agora → 422 em `startsAt` (`startsInThePast` em `rules.ts`), para todos os papéis. Mudar só o status de um agendamento passado continua permitido. Na tela, os horários passados do calendário ficam desabilitados (`isPastSlot` em `src/lib/calendar.ts`) e o campo de data/hora tem `min`. Testes que agendam pela API usam datas futuras (2030).
 
 ## UI
