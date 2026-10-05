@@ -1,5 +1,5 @@
 ---
-status: bloqueada
+status: adiada
 modulo: web
 owner:
 criado-em: 2026-10-04
@@ -40,3 +40,4 @@ Provavelmente será dividida em tasks menores quando for desbloqueada: canal e l
 ## Notas de progresso
 
 - 2026-10-04 — Criada bloqueada: depende de decisões de produto e contrato (provedor, número, plano, consentimento) e de credenciais externas.
+- 2026-10-05 — **Adiada por decisão do responsável**: provedor (Q1) e número (Q2) ficam para depois. Os botões com mensagens prontas (`TASK-0039`) já cobrem o envio manual. Volta a ser considerada quando o responsável escolher o provedor.

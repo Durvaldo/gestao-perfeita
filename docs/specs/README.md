@@ -19,7 +19,7 @@ Todas criadas em 2026-10-04, a partir das anotações do responsável sobre o si
 | [SPEC-0003](SPEC-0003.md) | Agenda: sem agendamento retroativo e atendimento concluído no dashboard | Regra + bug | aprovada | — | `TASK-0028`, `0029` |
 | [SPEC-0004](SPEC-0004.md) | Exceções da agenda e replanejamento dos agendamentos afetados | Feature | aprovada, com questões em aberto | SPEC-0003 | `TASK-0030`*, `0031`, `0032`* |
 | [SPEC-0005](SPEC-0005.md) | Telefones só com dígitos, exibidos com máscara | Dados + UX | aprovada | — | `TASK-0033`*, `0034` |
-| [SPEC-0006](SPEC-0006.md) | Integração com Google Agenda e Alexa | Discovery | aprovada como discovery | — | `TASK-0035` |
+| [SPEC-0006](SPEC-0006.md) | Integração com Google Agenda e Alexa | Discovery + feature | aprovada | — | `TASK-0035`, `0041`, `0042` |
 | [SPEC-0007](SPEC-0007.md) | Site da barbearia a partir de um template | Feature | aprovada | SPEC-0005 (RF-3) | `TASK-0036`, `0037`, `0038` |
 | [SPEC-0008](SPEC-0008.md) | Módulo de WhatsApp | Feature | aprovada | SPEC-0005 | `TASK-0039`, `0040`* |
 
