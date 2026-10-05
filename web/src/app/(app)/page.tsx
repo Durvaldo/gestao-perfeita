@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { BarList } from "@/components/charts/bar-list";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CARD_TABLE_CLASS } from "@/lib/table-styles";
 import { getCurrentUser } from "@/lib/current-user";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { runWithTenant } from "@/lib/tenancy/context";
@@ -93,8 +94,7 @@ export default async function DashboardPage() {
             Próximos aniversários
           </CardTitle>
         </CardHeader>
-        {/* Edge cells line up with the card's own spacing (16px); taller rows. */}
-        <Table className="[&_td]:py-3 [&_td:first-child]:ps-(--card-spacing) [&_td:last-child]:pe-(--card-spacing) [&_th]:h-11 [&_th:first-child]:ps-(--card-spacing) [&_th:last-child]:pe-(--card-spacing)">
+        <Table className={CARD_TABLE_CLASS}>
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>

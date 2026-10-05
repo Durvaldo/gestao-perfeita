@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CARD_TABLE_CLASS } from "@/lib/table-styles";
 import { api, apiAll } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/format";
 import { toastSuccess } from "@/lib/toast";
@@ -89,7 +90,7 @@ export function OrdersScreen({ ownProfessionalId }: { ownProfessionalId: number 
       />
 
       <Card className="gap-0 overflow-hidden p-0">
-        <Table>
+        <Table className={CARD_TABLE_CLASS}>
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead>
