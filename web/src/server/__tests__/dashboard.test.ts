@@ -71,6 +71,7 @@ describe("dashboard API", () => {
   beforeEach(async () => {
     await unscopedDb.financialEntry.deleteMany();
     await unscopedDb.order.deleteMany();
+    await unscopedDb.appointment.deleteMany();
     await unscopedDb.customer.deleteMany({ where: { phone: "1" } });
     // Seed customers have birthdays; clear them so birthday assertions are deterministic.
     await unscopedDb.customer.updateMany({ data: { birthDate: null } });
@@ -112,6 +113,41 @@ describe("dashboard API", () => {
       [carlosPro, "45.00"],
     ]);
     expect(res.body.topCustomers.map((c: { name: string }) => c.name)).toEqual(["A", "B"]);
+  });
+
+  test("completed appointments count as visits, without counting twice (SPEC-0003)", async () => {
+    const regular = await customer("Cliente da Agenda");
+    const other = await customer("Outro Cliente");
+    const adminUser = await unscopedDb.user.findUniqueOrThrow({ where: { email: "admin@barbearia-centro.com" } });
+    const service = await unscopedDb.service.findFirstOrThrow({ where: { tenantId: tenantA } });
+    const appointment = (customerId: number, status: "completed" | "confirmed" | "cancelled", day: number) =>
+      unscopedDb.appointment.create({
+        data: {
+          tenantId: tenantA,
+          customerId,
+          professionalId: carlosPro,
+          startsAt: new Date(`2030-01-${String(day).padStart(2, "0")}T13:00:00Z`),
+          endsAt: new Date(`2030-01-${String(day).padStart(2, "0")}T13:30:00Z`),
+          status,
+          createdByUserId: adminUser.id,
+        },
+      });
+
+    // (a) completed in the agenda, no order;
+    await appointment(regular.id, "completed", 10);
+    // (b) completed and closed through its paid order: one visit, not two;
+    const closed = await appointment(regular.id, "completed", 11);
+    const order = await paidOrder(regular.id, carlosPro, [{ serviceId: service.id, quantity: 1, total: "45.00" }]);
+    await unscopedDb.order.update({ where: { id: order.id }, data: { appointmentId: closed.id } });
+    // (c) a paid walk-in order.
+    await paidOrder(regular.id, carlosPro, [{ serviceId: service.id, quantity: 1, total: "45.00" }]);
+    // Not visits: a confirmed and a cancelled appointment.
+    await appointment(other.id, "confirmed", 12);
+    await appointment(other.id, "cancelled", 13);
+
+    const res = await dashboard();
+
+    expect(res.body.topCustomers).toEqual([{ customerId: regular.id, name: "Cliente da Agenda", totalVisits: 3 }]);
   });
 
   test("upcoming birthdays are ordered by the closest one, including year wrap", async () => {

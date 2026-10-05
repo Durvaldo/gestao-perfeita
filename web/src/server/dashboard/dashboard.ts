@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { zonedParts } from "@/lib/timezone";
 import { apiRoute } from "@/server/http/route";
 
-// Legacy: DashboardController. Only PAID orders count. Like the legacy app, the
+// Legacy: DashboardController. Revenue widgets count only PAID orders; visits also
+// count completed appointments (SPEC-0003). Like the legacy app, the
 // dashboard covers the whole barbershop for every staff member (no per-professional
 // filter), professionals included.
 
@@ -47,17 +48,31 @@ async function professionalRanking() {
   }));
 }
 
+/**
+ * Most frequent customers by visits (SPEC-0003). A visit is a completed
+ * appointment, with or without an order, or a paid order not already counted
+ * through a completed appointment (walk-in orders, or an order whose appointment
+ * is no longer marked completed). So an appointment closed through its order
+ * counts once.
+ */
 async function topCustomers() {
-  const rows = await db.order.groupBy({
-    by: ["customerId"],
-    where: { status: "paid" },
-    _count: { _all: true },
-    orderBy: { _count: { customerId: "desc" } },
-    take: TOP,
-  });
-  const customers = await db.customer.findMany({ where: { id: { in: rows.map((r) => r.customerId) } }, select: { id: true, name: true } });
+  const [completedAppointments, paidOrders] = await Promise.all([
+    db.appointment.groupBy({ by: ["customerId"], where: { status: "completed" }, _count: { _all: true } }),
+    db.order.groupBy({
+      by: ["customerId"],
+      where: { status: "paid", OR: [{ appointmentId: null }, { appointment: { status: { not: "completed" } } }] },
+      _count: { _all: true },
+    }),
+  ]);
+  const visits = new Map<number, number>();
+  for (const row of [...completedAppointments, ...paidOrders]) {
+    visits.set(row.customerId, (visits.get(row.customerId) ?? 0) + row._count._all);
+  }
+  // Most visits first; ties by customer id, so the order is stable.
+  const top = [...visits.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).slice(0, TOP);
+  const customers = await db.customer.findMany({ where: { id: { in: top.map(([id]) => id) } }, select: { id: true, name: true } });
   const names = new Map(customers.map((c) => [c.id, c.name]));
-  return rows.map((r) => ({ customerId: r.customerId, name: names.get(r.customerId) ?? null, totalVisits: r._count._all }));
+  return top.map(([customerId, totalVisits]) => ({ customerId, name: names.get(customerId) ?? null, totalVisits }));
 }
 
 /** Whole days from `today` to the next birthday ("YYYY-MM-DD" strings); today = 0. */

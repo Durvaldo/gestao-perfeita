@@ -71,13 +71,13 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Clientes mais frequentes</CardTitle>
-            <CardDescription>Atendimentos pagos (top 5)</CardDescription>
+            <CardDescription>Atendimentos concluídos na agenda ou em comanda (top 5)</CardDescription>
           </CardHeader>
           <CardContent>
             <BarList
               items={data.topCustomers.map((c) => ({ key: c.customerId, label: c.name ?? "—", value: c.totalVisits, display: String(c.totalVisits) }))}
               valueLabel="Atendimentos"
-              emptyText="Nenhum atendimento pago ainda."
+              emptyText="Nenhum atendimento ainda."
             />
           </CardContent>
         </Card>
