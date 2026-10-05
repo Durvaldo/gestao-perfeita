@@ -150,6 +150,24 @@ describe("dashboard API", () => {
     expect(res.body.topCustomers).toEqual([{ customerId: regular.id, name: "Cliente da Agenda", totalVisits: 3 }]);
   });
 
+  test("a professional sees only their own data; the admin sees the whole barbershop (SPEC-0001)", async () => {
+    const services = await unscopedDb.service.findMany({ where: { tenantId: tenantA }, orderBy: { id: "asc" } });
+    const ofCarlos = await customer("Cliente do Carlos", shiftedDate(3, 30));
+    const ofRafael = await customer("Cliente do Rafael", shiftedDate(2, 30));
+    await paidOrder(ofCarlos.id, carlosPro, [{ serviceId: services[0].id, quantity: 1, total: "45.00" }]);
+    await paidOrder(ofRafael.id, rafaelPro, [{ serviceId: services[1].id, quantity: 2, total: "70.00" }]);
+
+    const own = (await dashboard(carlos)).body;
+    expect(own.professionalRanking).toEqual([{ professionalId: carlosPro, name: "Carlos Souza", totalRevenue: "45.00" }]);
+    expect(own.bestSellingServices.map((s: { id: number }) => s.id)).toEqual([services[0].id]);
+    expect(own.topCustomers.map((c: { name: string }) => c.name)).toEqual(["Cliente do Carlos"]);
+    expect(own.upcomingBirthdays.map((c: { name: string }) => c.name)).toEqual(["Cliente do Carlos"]);
+
+    const all = (await dashboard()).body;
+    expect(all.professionalRanking.map((r: { professionalId: number }) => r.professionalId)).toEqual([rafaelPro, carlosPro]);
+    expect(all.upcomingBirthdays.map((c: { name: string }) => c.name)).toEqual(["Cliente do Rafael", "Cliente do Carlos"]);
+  });
+
   test("upcoming birthdays are ordered by the closest one, including year wrap", async () => {
     await customer("Aniversário em 100 dias", shiftedDate(100, 30));
     await customer("Aniversário em 5 dias", shiftedDate(5, 20));

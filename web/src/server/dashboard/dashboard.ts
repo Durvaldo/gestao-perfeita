@@ -1,20 +1,24 @@
 import { authorize } from "@/lib/authz/guard";
+import { type Actor, visibleToActor } from "@/lib/authz/policies";
 import { db } from "@/lib/db";
 import { zonedParts } from "@/lib/timezone";
 import { apiRoute } from "@/server/http/route";
 
 // Legacy: DashboardController. Revenue widgets count only PAID orders; visits also
-// count completed appointments (SPEC-0003). Like the legacy app, the
-// dashboard covers the whole barbershop for every staff member (no per-professional
-// filter), professionals included.
+// count completed appointments (SPEC-0003). The admin sees the whole barbershop;
+// a professional sees only their own appointments, orders and customers
+// (SPEC-0001 Q2; the legacy app showed everyone the whole barbershop).
+
+/** Records of the professional, or {} for the admin (same `where` as the listings). */
+type Scope = { professionalId?: number };
 
 const TOP = 5;
 
-async function bestSelling(type: "product" | "service") {
+async function bestSelling(type: "product" | "service", scope: Scope) {
   const key = type === "product" ? "productId" : "serviceId";
   const rows = await db.orderItem.groupBy({
     by: [key],
-    where: { type, order: { status: "paid" } },
+    where: { type, order: { status: "paid", ...scope } },
     _sum: { quantity: true },
     orderBy: { _sum: { quantity: "desc" } },
     take: TOP,
@@ -29,10 +33,10 @@ async function bestSelling(type: "product" | "service") {
   return rows.map((r) => ({ id: r[key], name: names.get(r[key]!) ?? null, totalQuantity: r._sum.quantity ?? 0 }));
 }
 
-async function professionalRanking() {
+async function professionalRanking(scope: Scope) {
   const rows = await db.order.groupBy({
     by: ["professionalId"],
-    where: { status: "paid" },
+    where: { status: "paid", ...scope },
     _sum: { totalAmount: true },
     orderBy: { _sum: { totalAmount: "desc" } },
   });
@@ -55,12 +59,12 @@ async function professionalRanking() {
  * is no longer marked completed). So an appointment closed through its order
  * counts once.
  */
-async function topCustomers() {
+async function topCustomers(scope: Scope) {
   const [completedAppointments, paidOrders] = await Promise.all([
-    db.appointment.groupBy({ by: ["customerId"], where: { status: "completed" }, _count: { _all: true } }),
+    db.appointment.groupBy({ by: ["customerId"], where: { status: "completed", ...scope }, _count: { _all: true } }),
     db.order.groupBy({
       by: ["customerId"],
-      where: { status: "paid", OR: [{ appointmentId: null }, { appointment: { status: { not: "completed" } } }] },
+      where: { status: "paid", ...scope, OR: [{ appointmentId: null }, { appointment: { status: { not: "completed" } } }] },
       _count: { _all: true },
     }),
   ]);
@@ -86,9 +90,16 @@ export function daysUntilBirthday(birthDate: string, today: string): number {
   return Math.round((next - todayMs) / 86_400_000);
 }
 
-async function upcomingBirthdays(timeZone: string) {
+async function upcomingBirthdays(timeZone: string, scope: Scope) {
   const today = zonedParts(new Date(), timeZone).date;
-  const customers = await db.customer.findMany({ where: { birthDate: { not: null } }, select: { id: true, name: true, birthDate: true } });
+  // A professional's customers: the ones they already booked or served.
+  const ofProfessional = scope.professionalId
+    ? { OR: [{ appointments: { some: { professionalId: scope.professionalId } } }, { orders: { some: { professionalId: scope.professionalId } } }] }
+    : {};
+  const customers = await db.customer.findMany({
+    where: { birthDate: { not: null }, ...ofProfessional },
+    select: { id: true, name: true, birthDate: true },
+  });
   return customers
     .map((c) => {
       const birthDate = c.birthDate!.toISOString().slice(0, 10);
@@ -98,15 +109,19 @@ async function upcomingBirthdays(timeZone: string) {
     .slice(0, TOP);
 }
 
-/** All dashboard widgets. Must run inside the tenant's context (ADR-0005). */
-export async function buildDashboard(timeZone: string) {
+/**
+ * All dashboard widgets, for the whole barbershop (admin) or only the actor's
+ * own data (professional, SPEC-0001). Must run inside the tenant's context (ADR-0005).
+ */
+export async function buildDashboard(timeZone: string, actor: Actor) {
+  const scope = visibleToActor(actor);
   const [bestSellingProducts, bestSellingServices, ranking, customers, birthdays] = await Promise.all([
-    bestSelling("product"),
-    bestSelling("service"),
-    professionalRanking(),
-    topCustomers(),
+    bestSelling("product", scope),
+    bestSelling("service", scope),
+    professionalRanking(scope),
+    topCustomers(scope),
     // "Today" is the barbershop's calendar day (ADR-0009).
-    upcomingBirthdays(timeZone),
+    upcomingBirthdays(timeZone, scope),
   ]);
   return {
     bestSellingProducts,
@@ -122,5 +137,5 @@ export type DashboardData = Awaited<ReturnType<typeof buildDashboard>>;
 // GET /api/dashboard
 export const dashboardRoute = apiRoute(async ({ user }) => {
   authorize(user, "dashboard", "view");
-  return buildDashboard(user.tenant?.timezone ?? "America/Sao_Paulo");
+  return buildDashboard(user.tenant?.timezone ?? "America/Sao_Paulo", user);
 });

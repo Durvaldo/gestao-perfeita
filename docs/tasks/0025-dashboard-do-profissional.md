@@ -1,5 +1,5 @@
 ---
-status: em-andamento
+status: concluida
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
@@ -24,9 +24,9 @@ Resolver a questão Q2 da [SPEC-0001](../specs/SPEC-0001.md), que estava pendent
 
 ## Critérios de conclusão
 
-- [ ] Decisão registrada na SPEC-0001.
-- [ ] `buildDashboard` aplica a regra escolhida para o profissional; o admin continua vendo tudo.
-- [ ] Testes do dashboard para os dois papéis; `npm test` passando; nota da `TASK-0017` atualizada.
+- [x] Decisão registrada na SPEC-0001.
+- [x] `buildDashboard` aplica a regra escolhida para o profissional; o admin continua vendo tudo.
+- [x] Testes do dashboard para os dois papéis; `npm test` passando; nota da `TASK-0017` atualizada.
 
 ## Referências
 
@@ -37,3 +37,4 @@ Resolver a questão Q2 da [SPEC-0001](../specs/SPEC-0001.md), que estava pendent
 
 - 2026-10-04 — Criada bloqueada: depende de uma decisão de produto (Q2 da SPEC-0001) ainda não tomada.
 - 2026-10-04 — Desbloqueada: o responsável respondeu às questões pendentes (ver "Decisões do responsável" na SPEC de origem).
+- 2026-10-04 — Implementado (decisão Q2 = A). `buildDashboard(timeZone, actor)` aplica o escopo de `visibleToActor` a todos os widgets: mais vendidos e ranking (comandas pagas dele), clientes mais frequentes (atendimentos dele) e aniversários (clientes que já tiveram agendamento ou comanda com ele). O admin continua vendo a barbearia inteira. Na tela, o profissional vê "Seu resumo" e "Seu faturamento" no lugar do ranking. Teste novo com os dois papéis. Nota da `TASK-0017` atualizada. Verificado: `npm test` (228), `npm run lint`, `npx tsc --noEmit` e `npm run test:e2e` (7).

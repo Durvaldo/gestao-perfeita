@@ -11,11 +11,12 @@ import { buildDashboard } from "@/server/dashboard/dashboard";
 export const metadata: Metadata = { title: "Dashboard · Agenda da Barbearia" };
 
 // Legacy DashboardView.vue: best sellers, professional ranking, frequent
-// customers and upcoming birthdays. Only paid orders count.
+// customers and upcoming birthdays. A professional sees only their own data (SPEC-0001).
 export default async function DashboardPage() {
   // The layout already guarantees a signed-in user with a tenant.
   const user = (await getCurrentUser())!;
-  const data = await runWithTenant(user.tenantId!, () => buildDashboard(user.tenant?.timezone ?? "America/Sao_Paulo"));
+  const data = await runWithTenant(user.tenantId!, () => buildDashboard(user.tenant?.timezone ?? "America/Sao_Paulo", user));
+  const isProfessional = user.role === "professional";
   const firstName = user.name.split(" ")[0];
 
   const quantityItems = (rows: { id: number | null; name: string | null; totalQuantity: number }[]) =>
@@ -25,7 +26,9 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Olá, {firstName}!</h1>
-        <p className="text-muted-foreground">Resumo da barbearia (comandas pagas).</p>
+        <p className="text-muted-foreground">
+          {isProfessional ? "Seu resumo: seus atendimentos e suas vendas." : "Resumo da barbearia."}
+        </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -51,7 +54,7 @@ export default async function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="size-4 text-muted-foreground" />
-              Ranking de barbeiros
+              {isProfessional ? "Seu faturamento" : "Ranking de barbeiros"}
             </CardTitle>
             <CardDescription>Faturamento total</CardDescription>
           </CardHeader>
