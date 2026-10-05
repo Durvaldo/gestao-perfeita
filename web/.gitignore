@@ -46,3 +46,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# uploaded files in development (local storage backend, ADR-0015)
+/.storage/

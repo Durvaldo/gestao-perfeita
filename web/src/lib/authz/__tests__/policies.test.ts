@@ -26,6 +26,7 @@ const matrix: Record<string, Record<string, Expectation>> = {
   order: { viewAny: "staff", view: "own", create: "staff", createFor: "own", update: "own" },
   scheduleBlock: { viewAny: "staff", view: "own", create: "own", update: "own", delete: "own" },
   messageTemplate: { view: "staff", update: "admin" },
+  file: { create: "admin", delete: "admin" },
   financialEntry: { viewAny: "admin", view: "admin", create: "admin", update: "admin", delete: "admin" },
   dashboard: { view: "staff" },
 };

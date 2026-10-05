@@ -95,6 +95,11 @@ export const policies = {
     view: isStaff,
     update: isAdmin,
   },
+  // Uploaded images of the barbershop site (SPEC-0007): admins only.
+  file: {
+    create: isAdmin,
+    delete: isAdmin,
+  },
   financialEntry: {
     viewAny: isAdmin,
     view: isAdmin,

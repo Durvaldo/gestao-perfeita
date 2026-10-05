@@ -112,6 +112,7 @@ model Tenant {
   orders           Order[]
   financialEntries FinancialEntry[]
   settings         TenantSetting[]
+  files            StoredFile[]
 
   @@map("tenants")
 }
@@ -448,4 +449,24 @@ model TenantSetting {
 
   @@unique([tenantId, key])
   @@map("tenant_settings")
+}
+
+// Files uploaded by a barbershop (site logo, cover, gallery; ADR-0015). The bytes
+// live in the storage backend (Google Drive, or local disk in development); the
+// public URL is /api/files/{id}, never the backend's own link.
+model StoredFile {
+  // Random UUID: the public URL must not be guessable or enumerable.
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   Int      @map("tenant_id")
+  // Where the bytes are: the Drive file id, or the file name on local disk.
+  storageKey String   @map("storage_key")
+  backend    String   @db.VarChar(20)
+  mimeType   String   @map("mime_type") @db.VarChar(50)
+  size       Int
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("stored_files")
 }

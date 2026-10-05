@@ -35,6 +35,10 @@ export default defineConfig({
     env: {
       DATABASE_URL: process.env.TEST_DATABASE_URL,
       BETTER_AUTH_URL: `http://localhost:${PORT}`,
+      // Uploaded files go to local disk in the E2E build (no Google Drive), ADR-0015.
+      ALLOW_LOCAL_FILE_STORAGE: "true",
+      LOCAL_FILE_STORAGE_DIR: "test-results/storage",
+      GOOGLE_DRIVE_CLIENT_ID: "",
     },
   },
 });

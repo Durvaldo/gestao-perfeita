@@ -12,6 +12,7 @@ const DIRECT_MODELS = new Set([
   "Order",
   "FinancialEntry",
   "TenantSetting",
+  "StoredFile",
 ]);
 
 // Models without tenant_id, scoped through a parent that has one. The legacy app

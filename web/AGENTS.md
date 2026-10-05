@@ -75,7 +75,8 @@ Fonte: `package.json`.
   - `TEST_DATABASE_URL`: banco da suíte, `agenda_web_test`. **É apagado a cada teste**; precisa ser diferente de `DATABASE_URL`, e o `vitest.config.mts` aborta se não for.
   - `BETTER_AUTH_SECRET` (gere com o comando do `.env.example`) e `BETTER_AUTH_URL` (`http://localhost:3001`).
 - Os dois bancos ficam no Postgres local do container `esus-db` (porta 5433), ao lado do `agenda_barbearia` do Laravel, que não é tocado.
-- `.gitignore` ignora `.env*`, exceto `.env.example`.
+- `.gitignore` ignora `.env*`, exceto `.env.example`, e `.storage/` (arquivos enviados em dev).
+- Armazenamento de arquivos ([ADR-0015](../docs/decisions/0015-armazenamento-de-arquivos-google-drive.md)): `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN` e, opcional, `GOOGLE_DRIVE_FOLDER_ID` (criada por `npm run drive:create-folder`). Passo a passo em [`docs/ARMAZENAMENTO_GOOGLE_DRIVE.md`](../docs/ARMAZENAMENTO_GOOGLE_DRIVE.md). Sem elas, dev e testes usam o disco local (`LOCAL_FILE_STORAGE_DIR`); a produção recusa uploads.
 - Porta **3001** em `dev` e `start`, para não colidir com o `frontend` Vue (3000) nem com o `php artisan serve` (8000) durante a convivência.
 
 ## Testes
@@ -164,9 +165,9 @@ Os e-mails de super_admin e admin são os mesmos do legado. Os profissionais sã
 
 [ADR-0005](../docs/decisions/0005-isolamento-por-tenant-prisma-extension.md).
 
-- **Use sempre `db`** em código que atende um tenant. Operações em modelos com tenant (`Customer`, `Professional`, `Service`, `Product`, `ScheduleBlock`, `Appointment`, `Order`, `FinancialEntry`, `TenantSetting` e os indiretos `WorkingHour`, `ProfessionalService`, `AppointmentService`, `OrderItem`) são filtradas pelo tenant do contexto. **Sem contexto, lançam `TenantContextMissingError`** (falha fechada).
+- **Use sempre `db`** em código que atende um tenant. Operações em modelos com tenant (`Customer`, `Professional`, `Service`, `Product`, `ScheduleBlock`, `Appointment`, `Order`, `FinancialEntry`, `TenantSetting`, `StoredFile` e os indiretos `WorkingHour`, `ProfessionalService`, `AppointmentService`, `OrderItem`) são filtradas pelo tenant do contexto. **Sem contexto, lançam `TenantContextMissingError`** (falha fechada).
 - O contexto vem de `withRequestTenant(fn)` (resolve pelo usuário logado, ou por `{ slug }` em rotas públicas) ou de `runWithTenant(tenantId, fn)`. Rode as queries **dentro** do callback.
-- `unscopedDb` só para: adapter do Better Auth, seed, setup de testes, features de super_admin. Importá-lo em código de requisição de tenant é erro de revisão.
+- `unscopedDb` só para: adapter do Better Auth, seed, setup de testes, features de super_admin e a rota pública `GET /api/files/[id]` (ADR-0015). Importá-lo em código de requisição de tenant é erro de revisão.
 - Registro de outro tenant buscado por ID → `null` ou erro "não encontrado" no `update`/`delete`. Responda **404**, como no legado.
 - **Limitação**: a extension não valida chaves estrangeiras de modelos diretos (ex.: `customerId` de outro tenant ao criar um `Appointment`). Valide toda FK recebida do cliente com o helper da `TASK-0007`. SQL cru (`$queryRaw`) também não é filtrado.
 - Testes: `src/lib/tenancy/__tests__/` (isolamento, falha fechada, escrita cross-tenant, modelos indiretos, concorrência, resolução).
@@ -223,6 +224,7 @@ try {
 | `/api/financial-report` | GET | só admin; `?from=&to=` (`YYYY-MM-DD`, padrão: mês corrente no fuso da barbearia) → `{ period, totalIncome, totalExpenses, balance, commissionsByProfessional[{ professionalId, professionalName, commission }] }` (valores como `"0.00"`) |
 | `/api/dashboard` | GET | admin (a barbearia inteira) e profissional (só os dados dele, SPEC-0001) → `{ bestSellingProducts, bestSellingServices, professionalRanking, topCustomers, upcomingBirthdays }`; faturamento só de comandas pagas; `topCustomers` conta atendimentos: agendamentos concluídos + comandas pagas não contadas por um agendamento concluído (SPEC-0003) |
 | `/api/appointments`, `/api/appointments/[id]` | GET, POST / GET, PUT, PATCH, DELETE | `?from=&to=` → lista completa por sobreposição (sem paginação); `?professionalId=`; `startsAt` sem offset = fuso da barbearia; o fim vem das durações; só o admin exclui |
+| `/api/files`, `/api/files/[id]` | POST / GET, DELETE | imagens enviadas ([ADR-0015](../docs/decisions/0015-armazenamento-de-arquivos-google-drive.md)): POST `multipart/form-data` com `file` (admin; JPEG/PNG/WebP pelos bytes, até 4 MB) → `{ id, url }`; GET **público** serve os bytes com cache de um ano; DELETE admin |
 | `/api/message-templates` | GET, PUT | modelos de mensagem de WhatsApp da barbearia ([SPEC-0008](../docs/specs/SPEC-0008.md), [ADR-0013](../docs/decisions/0013-configuracoes-por-tenant-chave-valor.md)): GET para a equipe (os botões usam), PUT só admin com os modelos a mudar; chave ausente = texto padrão (`src/lib/whatsapp.ts`) |
 | `/api/schedule-blocks`, `/api/schedule-blocks/[id]` | GET, POST / GET, PUT, PATCH, DELETE | exceções da agenda ([ADR-0012](../docs/decisions/0012-excecoes-da-agenda-representacao-e-checagem.md)): `{ professionalId | null, allDay, startDate/endDate | startsAt/endsAt, reason }`; `?from=&to=&professionalId=`; o profissional vê as dele e as da barbearia e gerencia só as dele; resposta com `affectedAppointments` |
 

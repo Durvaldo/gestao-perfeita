@@ -15,7 +15,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "drive:create-folder": "tsx scripts/drive-create-folder.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
