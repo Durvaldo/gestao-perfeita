@@ -117,8 +117,11 @@ export function ProfessionalsScreen({ canManage, ownProfessionalId }: { canManag
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Barbeiros"
-        description="Profissionais da barbearia, comissões e horários de trabalho."
+        // A professional only gets their own record from the API (SPEC-0001).
+        title={canManage ? "Barbeiros" : "Meus horários"}
+        description={
+          canManage ? "Profissionais da barbearia, comissões e horários de trabalho." : "Seu cadastro e seus horários de trabalho."
+        }
         action={
           canManage ? (
             <Button

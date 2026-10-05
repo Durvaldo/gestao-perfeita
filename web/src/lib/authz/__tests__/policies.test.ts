@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { authorize, requireUser } from "@/lib/authz/guard";
-import { type Actor, can, policies, visibleToActor } from "@/lib/authz/policies";
+import { type Actor, can, policies, visibleProfessionals, visibleToActor } from "@/lib/authz/policies";
 import { ForbiddenError, UnauthenticatedError } from "@/lib/http-errors";
 
 const admin: Actor = { id: 1, role: "admin", professional: null };
@@ -19,8 +19,9 @@ const matrix: Record<string, Record<string, Expectation>> = {
   customer: { viewAny: "staff", view: "staff", create: "admin", update: "admin", delete: "admin" },
   service: { viewAny: "staff", view: "staff", create: "admin", update: "admin", delete: "admin" },
   product: { viewAny: "staff", view: "staff", create: "admin", update: "admin", delete: "admin" },
-  professional: { viewAny: "staff", view: "staff", create: "admin", update: "admin", delete: "admin" },
-  workingHour: { viewAny: "staff", view: "staff", create: "own", update: "own", delete: "own" },
+  // SPEC-0001: a professional sees only their own record and schedule.
+  professional: { viewAny: "staff", view: "own", create: "admin", update: "admin", delete: "admin" },
+  workingHour: { viewAny: "own", view: "own", create: "own", update: "own", delete: "own" },
   appointment: { viewAny: "staff", view: "own", create: "staff", update: "own", delete: "admin" },
   order: { viewAny: "staff", view: "own", create: "staff", update: "own" },
   financialEntry: { viewAny: "admin", view: "admin", create: "admin", update: "admin", delete: "admin" },
@@ -72,6 +73,12 @@ describe("authorization policies", () => {
     expect(visibleToActor(admin)).toEqual({});
     expect(visibleToActor(professional)).toEqual({ professionalId: 10 });
     expect(visibleToActor(professionalWithoutRecord)).toEqual({ professionalId: -1 });
+  });
+
+  test("professionals only list their own professional record", () => {
+    expect(visibleProfessionals(admin)).toEqual({});
+    expect(visibleProfessionals(professional)).toEqual({ id: 10 });
+    expect(visibleProfessionals(professionalWithoutRecord)).toEqual({ id: -1 });
   });
 });
 

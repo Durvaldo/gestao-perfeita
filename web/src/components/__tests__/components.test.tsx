@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ConfirmProvider, useConfirm } from "@/components/confirm-provider";
 import { DecimalInput } from "@/components/decimal-input";
-import { isActive, NAV_ITEMS } from "@/components/shell/nav-items";
+import { isActive, NAV_ITEMS, visibleNavItems } from "@/components/shell/nav-items";
 
 afterEach(cleanup);
 
@@ -72,8 +72,8 @@ describe("ConfirmProvider", () => {
 });
 
 describe("navigation", () => {
-  test("the menu matches the legacy app, with Financeiro admin-only", () => {
-    expect(NAV_ITEMS.map((item) => item.label)).toEqual([
+  test("the admin sees the whole menu", () => {
+    expect(visibleNavItems(true).map((item) => item.displayLabel)).toEqual([
       "Dashboard",
       "Agenda",
       "Comandas",
@@ -83,7 +83,17 @@ describe("navigation", () => {
       "Serviços",
       "Produtos",
     ]);
-    expect(NAV_ITEMS.filter((item) => item.adminOnly).map((item) => item.href)).toEqual(["/financeiro"]);
+    expect(NAV_ITEMS.filter((item) => item.adminOnly).map((item) => item.href)).toEqual(["/financeiro", "/servicos", "/produtos"]);
+  });
+
+  test("a professional sees only their own work (SPEC-0001)", () => {
+    expect(visibleNavItems(false).map((item) => item.displayLabel)).toEqual([
+      "Dashboard",
+      "Agenda",
+      "Comandas",
+      "Clientes",
+      "Meus horários",
+    ]);
   });
 
   test("active item detection", () => {

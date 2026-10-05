@@ -37,10 +37,17 @@ export const policies = {
   customer: catalogPolicy,
   service: catalogPolicy,
   product: catalogPolicy,
-  professional: catalogPolicy,
+  professional: {
+    ...catalogPolicy,
+    // SPEC-0001: a professional sees only their own record, not their colleagues'.
+    // Subject: { professionalId } of the record being viewed.
+    view: adminOrOwner,
+  },
   workingHour: {
-    viewAny: isStaff,
-    view: isStaff,
+    // SPEC-0001: a professional sees only their own schedule.
+    // Subject: the professional whose schedule is being read or changed.
+    viewAny: adminOrOwner,
+    view: adminOrOwner,
     // Subject: the professional whose schedule is being changed.
     create: adminOrOwner,
     update: adminOrOwner,
@@ -95,6 +102,17 @@ export function can<R extends Resource, A extends Action<R>>(
 ): boolean {
   const rule = policies[resource][action] as Rule<unknown>;
   return rule(actor, subject[0]);
+}
+
+/**
+ * Prisma `where` restricting the professionals listing: a professional only
+ * lists their own record (SPEC-0001); admins list everyone.
+ */
+export function visibleProfessionals(actor: Actor): { id?: number } {
+  if (actor.role === "professional") {
+    return { id: actor.professional?.id ?? -1 };
+  }
+  return {};
 }
 
 /**

@@ -65,7 +65,7 @@ async function findHourOr404(id: number) {
 // GET /api/professionals/[id]/working-hours
 const index = apiRoute<{ id: string }>(async ({ params, user }) => {
   const professional = await findProfessionalOr404(parseId(params.id));
-  authorize(user, "workingHour", "viewAny");
+  authorize(user, "workingHour", "viewAny", { professionalId: professional.id });
   const hours = await db.workingHour.findMany({
     where: { professionalId: professional.id },
     orderBy: [{ weekday: "asc" }, { startTime: "asc" }],
@@ -85,7 +85,7 @@ const store = apiRoute<{ id: string }>(async ({ request, params, user }) => {
 // GET /api/working-hours/[id]
 const show = apiRoute<{ id: string }>(async ({ params, user }) => {
   const hour = await findHourOr404(parseId(params.id));
-  authorize(user, "workingHour", "view");
+  authorize(user, "workingHour", "view", hour);
   return presentWorkingHour(hour);
 });
 

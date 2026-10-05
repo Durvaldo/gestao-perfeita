@@ -138,6 +138,22 @@ describe("professionals API", () => {
     expect(await getCurrentUser(new Headers({ cookie: session }))).toBeNull();
   });
 
+  test("a professional only lists and reads their own record (SPEC-0001)", async () => {
+    const rafael = await unscopedDb.professional.findFirstOrThrow({ where: { user: { email: "rafael@barbearia-centro.com" } } });
+    const carlos = await unscopedDb.professional.findFirstOrThrow({ where: { user: { email: "carlos@barbearia-centro.com" } } });
+
+    const list = await call(collection.GET, { cookie: professional });
+    expect(list.status).toBe(200);
+    expect(list.body.data.map((p: { id: number }) => p.id)).toEqual([rafael.id]);
+    expect(list.body.total).toBe(1);
+
+    expect((await call(item.GET, { cookie: professional, params: { id: String(rafael.id) } })).status).toBe(200);
+    expect((await call(item.GET, { cookie: professional, params: { id: String(carlos.id) } })).status).toBe(403);
+
+    // The admin still lists everyone.
+    expect((await call(collection.GET, { cookie: admin })).body.total).toBeGreaterThan(1);
+  });
+
   test("professional can list but not create or manage", async () => {
     const target = await unscopedDb.professional.findFirstOrThrow({ where: { tenantId: tenantA } });
     const id = String(target.id);

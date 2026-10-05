@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { authClient } from "@/lib/auth-client";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { isActive, NAV_ITEMS } from "./nav-items";
+import { isActive, visibleNavItems } from "./nav-items";
 
 export type ShellUser = {
   name: string;
@@ -46,7 +46,7 @@ function Nav({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () => voi
   const pathname = usePathname();
   return (
     <nav className="flex flex-col gap-1">
-      {NAV_ITEMS.filter((item) => isAdmin || !item.adminOnly).map((item) => {
+      {visibleNavItems(isAdmin).map((item) => {
         const active = isActive(pathname, item.href);
         return (
           <Link
@@ -60,7 +60,7 @@ function Nav({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () => voi
             )}
           >
             <item.icon className="size-4" />
-            {item.label}
+            {item.displayLabel}
           </Link>
         );
       })}

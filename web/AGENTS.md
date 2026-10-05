@@ -57,7 +57,7 @@ Fonte: `package.json`.
 - `src/lib/current-user.ts`: `getCurrentUser(headers?)` devolve o usuário logado (`id`, `name`, `email`, `role`, `tenantId`, `professional`) ou `null`. **É a forma padrão de saber quem está logado no servidor.**
 - `src/lib/account-status.ts`: `isAccessBlocked`/`isUserAccessBlocked` (profissional inativo não acessa; [ADR-0008](../docs/decisions/0008-desativar-profissional-e-usuario-com-tenant.md)).
 - `src/lib/auth-messages.ts`: `authErrorMessage()` traduz os códigos de erro do Better Auth para pt-BR.
-- `src/lib/authz/`: `policies.ts` (matriz de permissões em funções puras: `can`, `visibleToActor`) e `guard.ts` (`requireUser` → 401, `authorize` → 403) ([ADR-0006](../docs/decisions/0006-autorizacao-policies-funcoes-puras.md)).
+- `src/lib/authz/`: `policies.ts` (matriz de permissões em funções puras: `can`, `visibleToActor`, `visibleProfessionals`) e `guard.ts` (`requireUser` → 401, `authorize` → 403) ([ADR-0006](../docs/decisions/0006-autorizacao-policies-funcoes-puras.md)).
 - `src/lib/http-errors.ts`: `UnauthenticatedError`, `ForbiddenError`, `NotFoundError`, `InUseError` (409; o `P2003` do Prisma também vira 409), `ValidationError` (422 `{ message, errors }`; `ValidationError.field()` para regras de negócio), com as mensagens pt-BR do legado, e `errorResponse(error)`, que converte essas classes e o `P2025` do Prisma em JSON com o status certo.
 - `src/server/http/`: infraestrutura da API ([ADR-0007](../docs/decisions/0007-convencoes-camada-servidor.md)): `route.ts` (`apiRoute`, `created`, `noContent`), `validation.ts` (`parseBody`, `parseQuery`, `validate`), `references.ts` (`assertReferencesInTenant`), `pagination.ts` (`pageFromRequest`, `paginate`), `serialize.ts` (`toJsonValue`).
 - `src/server/http/fields.ts` (builders de campos Zod compatíveis com as regras do Laravel) e `src/server/http/crud.ts` (`crudRoutes`: o `apiResource` genérico para recursos simples, ver a atualização da ADR-0007).
@@ -187,7 +187,8 @@ try {
 }
 ```
 
-- Matriz (igual ao legado): `customer`/`service`/`product`/`professional` → leitura para staff (admin + professional), escrita só para admin. `workingHour` → escrita pelo admin ou pelo dono. `appointment`/`order` → ver e editar pelo admin ou pelo dono, criar por qualquer staff; excluir agendamento só admin. `financialEntry` → só admin. `dashboard` → staff. `super_admin` e `customer` não têm permissão no painel.
+- Matriz: `customer`/`service`/`product` → leitura para staff (admin + professional), escrita só para admin. `professional` → o admin lista e vê todos; o profissional só o próprio registro (`visibleProfessionals(user)` na listagem, [SPEC-0001](../docs/specs/SPEC-0001.md)); escrita só para admin. `workingHour` → leitura e escrita pelo admin ou pelo dono (SPEC-0001). `appointment`/`order` → ver e editar pelo admin ou pelo dono, criar por qualquer staff; excluir agendamento só admin. `financialEntry` → só admin. `dashboard` → staff. `super_admin` e `customer` não têm permissão no painel.
+- Menu e telas (SPEC-0001): `Financeiro`, `Serviços` e `Produtos` são só do admin (as páginas respondem 404 ao profissional). `/barbeiros` aparece para o profissional como "Meus horários", só com o registro dele. `visibleNavItems(isAdmin)` em `nav-items.ts` monta o menu.
 - Listagens de agendamentos e comandas: some `visibleToActor(user)` ao `where` (o profissional vê só os próprios).
 - Mudou uma permissão? Atualize `policies.ts` **e** a matriz em `src/lib/authz/__tests__/policies.test.ts`.
 
@@ -223,7 +224,7 @@ try {
 | `/api/dashboard` | GET | admin e profissional (a barbearia inteira, como no legado) → `{ bestSellingProducts, bestSellingServices, professionalRanking, topCustomers, upcomingBirthdays }`; só comandas pagas |
 | `/api/appointments`, `/api/appointments/[id]` | GET, POST / GET, PUT, PATCH, DELETE | `?from=&to=` → lista completa por sobreposição (sem paginação); `?professionalId=`; `startsAt` sem offset = fuso da barbearia; o fim vem das durações; só o admin exclui |
 
-Leitura: admin e profissional. Escrita: só admin (exceto horários, que o próprio profissional também edita). Listas paginadas (`?page=`, 15 por página, mais recentes primeiro), menos a de horários, que vem completa e ordenada por dia.
+Leitura: admin e profissional, menos `/api/professionals` e os horários, em que o profissional só vê o que é dele (SPEC-0001). Escrita: só admin (exceto horários, que o próprio profissional também edita). Listas paginadas (`?page=`, 15 por página, mais recentes primeiro), menos a de horários, que vem completa e ordenada por dia.
 
 ## Profissionais e acesso
 

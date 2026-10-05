@@ -52,11 +52,19 @@ describe("working hours API", () => {
   });
 
   test("lists a professional's schedule ordered by weekday", async () => {
-    const res = await call(byProfessional.GET, { cookie: carlos, params: { id: String(ids.rafael) } });
+    const res = await call(byProfessional.GET, { cookie: carlos, params: { id: String(ids.carlos) } });
 
     expect(res.status).toBe(200);
     expect(res.body.map((h: { weekday: number }) => h.weekday)).toEqual([1, 2, 3, 4, 5]);
     expect(res.body[0]).toMatchObject({ startTime: "09:00", endTime: "18:00" });
+  });
+
+  test("a professional cannot read a colleague's schedule (SPEC-0001)", async () => {
+    expect((await call(byProfessional.GET, { cookie: carlos, params: { id: String(ids.rafael) } })).status).toBe(403);
+    const rafaelHour = await unscopedDb.workingHour.findFirstOrThrow({ where: { professionalId: ids.rafael } });
+    expect((await call(item.GET, { cookie: carlos, params: { id: String(rafaelHour.id) } })).status).toBe(403);
+    // The admin still reads everyone's schedule.
+    expect((await call(byProfessional.GET, { cookie: admin, params: { id: String(ids.rafael) } })).status).toBe(200);
   });
 
   test("a professional manages only their own schedule", async () => {

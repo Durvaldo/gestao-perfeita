@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authorize } from "@/lib/authz/guard";
+import { visibleProfessionals } from "@/lib/authz/policies";
 import { db } from "@/lib/db";
 import { NotFoundError, ValidationError } from "@/lib/http-errors";
 import { hashPassword } from "@/lib/password";
@@ -55,9 +56,11 @@ async function revokeSessions(userId: number) {
 
 const index = apiRoute(async ({ request, user }) => {
   authorize(user, "professional", "viewAny");
+  const where = visibleProfessionals(user);
   return paginate(pageFromRequest(request), {
-    findMany: (args) => db.professional.findMany({ include: withUser, orderBy: [{ createdAt: "desc" }, { id: "desc" }], ...args }),
-    count: () => db.professional.count(),
+    findMany: (args) =>
+      db.professional.findMany({ where, include: withUser, orderBy: [{ createdAt: "desc" }, { id: "desc" }], ...args }),
+    count: () => db.professional.count({ where }),
   });
 });
 
@@ -97,7 +100,7 @@ const store = apiRoute(async ({ request, user }) => {
 
 const show = apiRoute<{ id: string }>(async ({ params, user }) => {
   const professional = await findOr404(parseId(params.id));
-  authorize(user, "professional", "view");
+  authorize(user, "professional", "view", { professionalId: professional.id });
   return professional;
 });
 

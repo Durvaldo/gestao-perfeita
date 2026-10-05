@@ -84,6 +84,23 @@ test("a professional sees their own agenda and no financial data", async ({ page
   await expect(page.getByText("Página não encontrada")).toBeVisible();
 });
 
+test("a professional does not see the catalog screens nor their colleagues (SPEC-0001)", async ({ page }) => {
+  await login(page, "carlos@barbearia-centro.com");
+
+  for (const name of ["Serviços", "Produtos", "Barbeiros"]) {
+    await expect(page.getByRole("link", { name, exact: true })).toHaveCount(0);
+  }
+  for (const path of ["/servicos", "/produtos"]) {
+    await page.goto(path);
+    await expect(page.getByText("Página não encontrada")).toBeVisible();
+  }
+
+  await page.getByRole("link", { name: "Meus horários" }).click();
+  await expect(page.getByRole("heading", { name: "Meus horários" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "Carlos Souza", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("cell", { name: "Rafael Lima", exact: true })).toHaveCount(0);
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");
