@@ -58,6 +58,11 @@ test("main cycle: appointment → order → payment → financial report and das
 
   // Order from the appointment, prefilled with its service.
   await block.click();
+  // "Add to Google Calendar" with the right UTC time (10:00 in São Paulo = 13:00Z; SPEC-0006).
+  const googleDates = `${nextMonday.replace(/-/g, "")}T130000Z`;
+  const googleLink = await page.getByRole("link", { name: "Adicionar ao Google Agenda" }).getAttribute("href");
+  expect(googleLink?.startsWith("https://calendar.google.com/calendar/render?action=TEMPLATE&")).toBe(true);
+  expect(googleLink).toContain(`dates=${googleDates}`);
   await page.getByRole("button", { name: "Criar comanda" }).click();
   await expect(page).toHaveURL(/\/comandas\/\d+$/);
   await expect(page.getByRole("cell", { name: "Corte", exact: true })).toBeVisible();

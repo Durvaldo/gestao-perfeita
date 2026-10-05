@@ -18,6 +18,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { zonedParts } from "@/lib/timezone";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { useMessageTemplates, WhatsAppLink } from "@/components/whatsapp-link";
+import { googleCalendarUrl } from "@/lib/calendar-links";
 import { appointmentVariables, renderTemplate } from "@/lib/whatsapp";
 import { AgendaCalendar, type CalendarAppointment, type CalendarBlock, type CalendarWorkingHour } from "./agenda-calendar";
 
@@ -419,6 +420,23 @@ export function AgendaScreen({
                   label="Lembrar no WhatsApp"
                   text={renderTemplate(templates.appointmentReminder, appointmentVariables(detail, barbershop, timeZone))}
                 />
+                {/* Saves the event in the user's own Google Calendar, by hand (SPEC-0006 RF-2a). */}
+                <Button asChild variant="outline" size="sm">
+                  <a
+                    href={googleCalendarUrl({
+                      title: `${detail.customer.name} · ${detail.services.map((s) => s.name).join(", ")}`,
+                      startsAt: detail.startsAt,
+                      endsAt: detail.endsAt,
+                      details: `Atendimento com ${detail.professional.user.name} na ${barbershop}.`,
+                      location: barbershop,
+                    })}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <CalendarPlus className="size-4" />
+                    Adicionar ao Google Agenda
+                  </a>
+                </Button>
               </div>
             ) : null}
           </div>
