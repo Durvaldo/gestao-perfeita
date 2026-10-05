@@ -268,6 +268,7 @@ Leitura: admin e profissional, menos `/api/professionals` e os horários, em que
 
 - Página nova do painel: `src/app/(app)/<rota>/page.tsx` (herda a guarda e o layout). Adicione o item em `src/components/shell/nav-items.ts` se for para o menu.
 - Componente shadcn novo: `npx shadcn@4.21.1 add <nome>` em `web/` e revise o gerado.
+- Tabela dentro de `<Card className="p-0">`: use `<Table className={CARD_TABLE_CLASS}>` (`src/lib/table-styles.ts`), que alinha as células das bordas ao espaçamento do card (16 px); cabeçalho de card nesse caso: `CardHeader className="pt-(--card-spacing) pb-3"`.
 - Padrões: formulários em `AppModal`; exclusão com `await useConfirm()({ title, confirmLabel: "Excluir" })`; feedback com `toastSuccess`/`toastError(apiErrorMessage(body, "Não foi possível ..."))`; dinheiro com `DecimalInput` + `formatCurrency`; datas de calendário com `formatDate` (sem fuso).
 - Esconda na UI o que o usuário não pode fazer com `can(user, ...)`. A API continua sendo a checagem de verdade.
 - Login no navegador para testar: os logins de dev do seed (seção "Dados de desenvolvimento").

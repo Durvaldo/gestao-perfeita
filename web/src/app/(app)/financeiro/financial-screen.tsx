@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CARD_TABLE_CLASS } from "@/lib/table-styles";
 import { api } from "@/lib/api-client";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -138,11 +139,11 @@ export function FinancialScreen({ defaultFrom, defaultTo, today }: { defaultFrom
       </div>
 
       <Card className="gap-0 overflow-hidden p-0">
-        <CardHeader className="p-6">
+        <CardHeader className="pt-(--card-spacing) pb-3">
           <CardTitle>Comissões por barbeiro</CardTitle>
           <CardDescription>Sobre os serviços das comandas pagas no período</CardDescription>
         </CardHeader>
-        <Table>
+        <Table className={CARD_TABLE_CLASS}>
           <TableHeader>
             <TableRow>
               <TableHead>Barbeiro</TableHead>
@@ -168,10 +169,10 @@ export function FinancialScreen({ defaultFrom, defaultTo, today }: { defaultFrom
       </Card>
 
       <Card className="gap-0 overflow-hidden p-0">
-        <CardHeader className="p-6">
+        <CardHeader className="pt-(--card-spacing) pb-3">
           <CardTitle>Lançamentos</CardTitle>
         </CardHeader>
-        <Table>
+        <Table className={CARD_TABLE_CLASS}>
           <TableHeader>
             <TableRow>
               <TableHead>Data</TableHead>

@@ -8,6 +8,7 @@ import { FormError, FormField, PageHeader, PaginationBar, TableState } from "@/c
 import { usePaginated } from "@/components/crud/use-paginated";
 import { PhoneInput } from "@/components/phone-input";
 import { useMessageTemplates, WhatsAppLink } from "@/components/whatsapp-link";
+import { CARD_TABLE_CLASS } from "@/lib/table-styles";
 import { renderTemplate } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -113,7 +114,7 @@ export function CustomersScreen({ canManage, barbershop }: { canManage: boolean;
       />
 
       <Card className="gap-0 overflow-hidden p-0">
-        <Table>
+        <Table className={CARD_TABLE_CLASS}>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>

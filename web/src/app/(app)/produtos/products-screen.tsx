@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { CARD_TABLE_CLASS } from "@/lib/table-styles";
 import { api } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/format";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -104,7 +105,7 @@ export function ProductsScreen({ canManage }: { canManage: boolean }) {
       />
 
       <Card className="gap-0 overflow-hidden p-0">
-        <Table>
+        <Table className={CARD_TABLE_CLASS}>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>

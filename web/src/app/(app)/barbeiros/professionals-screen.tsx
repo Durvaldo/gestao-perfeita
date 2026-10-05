@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CARD_TABLE_CLASS } from "@/lib/table-styles";
 import { api } from "@/lib/api-client";
 import { formatDecimal } from "@/lib/format";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -140,7 +141,7 @@ export function ProfessionalsScreen({ canManage, ownProfessionalId }: { canManag
       />
 
       <Card className="gap-0 overflow-hidden p-0">
-        <Table>
+        <Table className={CARD_TABLE_CLASS}>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
