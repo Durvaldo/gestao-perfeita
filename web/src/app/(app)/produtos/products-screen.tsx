@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/format";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { EMPTY_PRODUCT_FORM, type ProductForm, productFormToBody, productToForm, type StockMode } from "./product-form";
 
 type Product = {
   id: number;
@@ -28,32 +29,24 @@ type Product = {
   active: boolean;
 };
 
-type Form = { name: string; description: string; price: string | null; stockQuantity: string; active: boolean };
-const EMPTY: Form = { name: "", description: "", price: null, stockQuantity: "", active: true };
+const STOCK_MODES: { value: StockMode; label: string; hint: string }[] = [
+  { value: "tracked", label: "Registrar quantidade", hint: "O sistema baixa o estoque a cada venda." },
+  { value: "free", label: "Estoque livre", hint: "Vende sem limite de quantidade." },
+];
 
 export function ProductsScreen({ canManage }: { canManage: boolean }) {
   const confirm = useConfirm();
   const { items, meta, setPage, loading, reload } = usePaginated<Product>("/api/products");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState<Form>(EMPTY);
+  const [form, setForm] = useState<ProductForm>(EMPTY_PRODUCT_FORM);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   function openForm(product: Product | null) {
     setEditing(product);
-    setForm(
-      product
-        ? {
-            name: product.name,
-            description: product.description ?? "",
-            price: product.price,
-            stockQuantity: product.stockQuantity === null ? "" : String(product.stockQuantity),
-            active: product.active,
-          }
-        : EMPTY,
-    );
+    setForm(product ? productToForm(product) : EMPTY_PRODUCT_FORM);
     setErrors({});
     setFormError(null);
     setOpen(true);
@@ -61,11 +54,16 @@ export function ProductsScreen({ canManage }: { canManage: boolean }) {
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    const request = productFormToBody(form);
+    if (!request.ok) {
+      setErrors(request.errors);
+      setFormError(null);
+      return;
+    }
     setSaving(true);
-    // An empty stock field is sent as "" → null: stock not tracked.
     const response = await api<Product>(editing ? `/api/products/${editing.id}` : "/api/products", {
       method: editing ? "PUT" : "POST",
-      body: form,
+      body: request.body,
     });
     setSaving(false);
     if (!response.ok) {
@@ -123,7 +121,7 @@ export function ProductsScreen({ canManage }: { canManage: boolean }) {
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{formatCurrency(product.price)}</TableCell>
-                  <TableCell>{product.stockQuantity ?? <span className="text-muted-foreground">Sem controle</span>}</TableCell>
+                  <TableCell>{product.stockQuantity ?? <span className="text-muted-foreground">Livre</span>}</TableCell>
                   <TableCell>
                     <Badge variant={product.active ? "default" : "secondary"}>{product.active ? "Ativo" : "Inativo"}</Badge>
                   </TableCell>
@@ -171,15 +169,41 @@ export function ProductsScreen({ canManage }: { canManage: boolean }) {
           <FormField id="price" label="Preço (R$)" errors={errors.price}>
             <DecimalInput id="price" value={form.price} onChange={(price) => setForm({ ...form, price })} />
           </FormField>
-          <FormField id="stockQuantity" label="Estoque (vazio = sem controle)" errors={errors.stockQuantity}>
-            <Input
-              id="stockQuantity"
-              type="number"
-              min={0}
-              value={form.stockQuantity}
-              onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })}
-            />
-          </FormField>
+          <fieldset className="grid gap-2 sm:col-span-2">
+            <legend className="mb-2 text-sm font-medium">Estoque</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {STOCK_MODES.map((mode) => (
+                <label
+                  key={mode.value}
+                  className="flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                >
+                  <input
+                    type="radio"
+                    name="stockMode"
+                    value={mode.value}
+                    checked={form.stockMode === mode.value}
+                    onChange={() => setForm({ ...form, stockMode: mode.value })}
+                    className="mt-0.5 accent-primary"
+                  />
+                  <span>
+                    <span className="block font-medium">{mode.label}</span>
+                    <span className="text-muted-foreground">{mode.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {form.stockMode === "tracked" ? (
+            <FormField id="stockQuantity" label="Quantidade em estoque" errors={errors.stockQuantity}>
+              <Input
+                id="stockQuantity"
+                type="number"
+                min={0}
+                value={form.stockQuantity}
+                onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })}
+              />
+            </FormField>
+          ) : null}
           <FormField id="description" label="Descrição" errors={errors.description} className="sm:col-span-2">
             <Textarea id="description" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </FormField>

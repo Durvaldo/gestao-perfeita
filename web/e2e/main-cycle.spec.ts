@@ -112,6 +112,29 @@ test("a professional does not see the catalog screens nor their colleagues (SPEC
   await expect(page.getByRole("cell", { name: "Rafael Lima", exact: true })).toHaveCount(0);
 });
 
+test("product stock mode: 'Registrar quantidade' or 'Estoque livre' (SPEC-0002)", async ({ page }) => {
+  await login(page, "admin@barbearia-centro.com");
+  await page.goto("/produtos");
+
+  // A new product starts as "Registrar quantidade", which requires a quantity.
+  await page.getByRole("button", { name: "Novo produto" }).click();
+  await page.locator("#name").fill("Cera E2E");
+  await page.locator("#price").fill("25,00");
+  await expect(page.getByRole("radio", { name: /Registrar quantidade/ })).toBeChecked();
+  await page.getByRole("button", { name: "Adicionar" }).click();
+  await expect(page.getByText("Informe a quantidade em estoque ou escolha estoque livre.")).toBeVisible();
+
+  // "Estoque livre" hides the quantity and saves without stock control.
+  await page.getByRole("radio", { name: /Estoque livre/ }).check();
+  await expect(page.locator("#stockQuantity")).toHaveCount(0);
+  await page.getByRole("button", { name: "Adicionar" }).click();
+  await expect(page.getByRole("row", { name: /Cera E2E/ })).toContainText("Livre");
+
+  // Editing opens on the product's mode.
+  await page.getByRole("row", { name: /Cera E2E/ }).getByRole("button", { name: "Editar" }).click();
+  await expect(page.getByRole("radio", { name: /Estoque livre/ })).toBeChecked();
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");
