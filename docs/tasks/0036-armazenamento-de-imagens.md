@@ -1,5 +1,5 @@
 ---
-status: backlog
+status: em-andamento
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
