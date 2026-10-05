@@ -77,6 +77,7 @@ describe("navigation", () => {
     expect(visibleNavItems(true).map((item) => item.displayLabel)).toEqual([
       "Dashboard",
       "Agenda",
+      "Exceções",
       "Comandas",
       "Financeiro",
       "Clientes",
@@ -91,6 +92,7 @@ describe("navigation", () => {
     expect(visibleNavItems(false).map((item) => item.displayLabel)).toEqual([
       "Dashboard",
       "Agenda",
+      "Minhas folgas",
       "Comandas",
       "Clientes",
       "Meus horários",

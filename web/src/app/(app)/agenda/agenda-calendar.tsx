@@ -1,6 +1,6 @@
 "use client";
 
-import { dayMonthLabel, isPastSlot, type LocalNow, minutesToTime, timeToMinutes, weekdayIndex, weekdayShortLabel } from "@/lib/calendar";
+import { dayMonthLabel, isPastSlot, type LocalNow, minutesToTime, rangeOnDay, timeToMinutes, weekdayIndex, weekdayShortLabel } from "@/lib/calendar";
 import { zonedParts } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,9 @@ export type CalendarAppointment = {
 };
 
 export type CalendarWorkingHour = { weekday: number; startTime: string; endTime: string };
+
+/** A schedule exception (SPEC-0004): the slots inside it can't be booked. */
+export type CalendarBlock = { id: number; startsAt: string; endsAt: string; reason: string | null; professionalId: number | null };
 
 const PX_PER_MINUTE = 1.2;
 const SLOT_MINUTES = 30;
@@ -37,6 +40,7 @@ export function AgendaCalendar({
   timeZone,
   appointments,
   workingHours,
+  blocks = [],
   onSelectSlot,
   onSelectAppointment,
 }: {
@@ -47,6 +51,7 @@ export function AgendaCalendar({
   timeZone: string;
   appointments: CalendarAppointment[];
   workingHours: CalendarWorkingHour[];
+  blocks?: CalendarBlock[];
   onSelectSlot?: (dateKey: string, minutes: number) => void;
   onSelectAppointment: (appointment: CalendarAppointment) => void;
 }) {
@@ -94,6 +99,21 @@ export function AgendaCalendar({
   const height = (max - min) * PX_PER_MINUTE;
   const slots: number[] = [];
   for (let m = min; m < max; m += SLOT_MINUTES) slots.push(m);
+  // Exceptions per visible day, clipped to the grid's hour range.
+  const blocksByDay = new Map(
+    days.map((day) => [
+      day,
+      blocks.flatMap((block) => {
+        const range = rangeOnDay(block.startsAt, block.endsAt, day, timeZone);
+        if (!range) return [];
+        const startMin = Math.max(range.startMin, min);
+        const endMin = Math.min(range.endMin, max);
+        return endMin > startMin ? [{ block, startMin, endMin, fullStart: range.startMin, fullEnd: range.endMin }] : [];
+      }),
+    ]),
+  );
+  const isBlocked = (dateKey: string, minute: number) =>
+    (blocksByDay.get(dateKey) ?? []).some((b) => minute < b.fullEnd && minute + SLOT_MINUTES > b.fullStart);
   const isWorking = (dateKey: string, minute: number) =>
     (periods.get(weekdayIndex(dateKey)) ?? []).some((p) => minute >= p.start && minute + SLOT_MINUTES <= p.end);
 
@@ -122,7 +142,7 @@ export function AgendaCalendar({
           <div key={day} className="relative border-s" style={{ height }}>
             {slots.map((m) => {
               const past = isPastSlot(day, m, now);
-              const selectable = Boolean(onSelectSlot) && !past;
+              const selectable = Boolean(onSelectSlot) && !past && !isBlocked(day, m);
               return (
                 <button
                   key={m}
@@ -139,6 +159,20 @@ export function AgendaCalendar({
                 />
               );
             })}
+            {(blocksByDay.get(day) ?? []).map(({ block, startMin, endMin }) => (
+              <div
+                key={`block-${block.id}`}
+                role="note"
+                aria-label={`Agenda fechada: ${block.reason ?? "sem motivo"}`}
+                className="pointer-events-none absolute inset-x-0 overflow-hidden border-y border-muted-foreground/30 bg-[repeating-linear-gradient(135deg,var(--muted)_0,var(--muted)_6px,transparent_6px,transparent_12px)] px-1.5 py-0.5 text-xs text-muted-foreground"
+                style={{ top: (startMin - min) * PX_PER_MINUTE, height: (endMin - startMin) * PX_PER_MINUTE }}
+              >
+                <span className="rounded bg-background/80 px-1 font-medium">
+                  {block.professionalId === null ? "Barbearia fechada" : "Fechado"}
+                  {block.reason ? ` · ${block.reason}` : ""}
+                </span>
+              </div>
+            ))}
             {(byDay.get(day) ?? []).map(({ appointment, startMin, endMin }) => (
               <button
                 key={appointment.id}

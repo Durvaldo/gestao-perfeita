@@ -1,3 +1,5 @@
+import { zonedParts } from "./timezone";
+
 // Calendar-day helpers (ported from frontend/src/utils/calendar.js). Calendar days
 // are "YYYY-MM-DD" strings ("dateKey"); arithmetic is done on UTC dates so the
 // browser's own time zone never shifts a day. Times of day are minutes since 00:00.
@@ -54,4 +56,18 @@ export type LocalNow = { date: string; minutes: number };
  */
 export function isPastSlot(dateKey: string, minutes: number, now: LocalNow): boolean {
   return dateKey < now.date || (dateKey === now.date && minutes < now.minutes);
+}
+
+/**
+ * The part of [startsAt, endsAt) that falls on `dateKey`, in minutes of the
+ * barbershop's local day ([0, 1440]), or null when it doesn't touch that day.
+ * Used to draw schedule exceptions on the calendar (SPEC-0004).
+ */
+export function rangeOnDay(startsAt: string, endsAt: string, dateKey: string, timeZone: string): { startMin: number; endMin: number } | null {
+  const start = zonedParts(new Date(startsAt), timeZone);
+  const end = zonedParts(new Date(endsAt), timeZone);
+  if (start.date > dateKey || end.date < dateKey) return null;
+  const startMin = start.date < dateKey ? 0 : timeToMinutes(start.time);
+  const endMin = end.date > dateKey ? 24 * 60 : timeToMinutes(end.time);
+  return endMin > startMin ? { startMin, endMin } : null;
 }

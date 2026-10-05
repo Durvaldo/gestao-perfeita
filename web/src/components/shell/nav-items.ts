@@ -1,6 +1,7 @@
 import {
   Boxes,
   CalendarDays,
+  CalendarOff,
   Coins,
   type LucideIcon,
   LayoutDashboard,
@@ -24,6 +25,8 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
+  // Holidays, days off, sick leave (SPEC-0004).
+  { href: "/excecoes", label: "Exceções", icon: CalendarOff, professionalLabel: "Minhas folgas" },
   { href: "/comandas", label: "Comandas", icon: Receipt },
   { href: "/financeiro", label: "Financeiro", icon: Coins, adminOnly: true },
   { href: "/clientes", label: "Clientes", icon: Users },

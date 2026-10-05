@@ -286,6 +286,7 @@ Use `src/app/(app)/clientes/` como modelo para telas de lista + formulário:
 
 ## Telas de negócio
 
+- **Exceções** (`(app)/excecoes/`, menu "Exceções" / "Minhas folgas" para o barbeiro): lista as exceções de hoje em diante, com formulário de dia inteiro ou período e sugestões de motivo; a lógica do formulário fica em `exception-form.ts`. Na agenda, as exceções aparecem como faixas hachuradas (`role="note"`) e os horários dentro delas ficam desabilitados (`rangeOnDay` em `src/lib/calendar.ts`).
 - **Agenda** (`(app)/agenda/`): os horários vêm da API em UTC e são posicionados e exibidos com `zonedParts(..., timeZone da barbearia)`. Clicar num horário livre abre o formulário com `startsAt` local (`datetime-local`). "Criar comanda" faz `POST /api/orders { appointmentId }` e redireciona para `/comandas/[id]`.
 - **Comandas** (`(app)/comandas/`): rótulos pt-BR de status e formas de pagamento em `order-labels.ts`. Os erros 422 do servidor (estoque, duplicidade, comanda fechada) aparecem no formulário.
 - **Dashboard** (`(app)/page.tsx`): dados no servidor, sem fetch do cliente; gráficos com `BarList`. O profissional vê só os próprios dados: comandas, atendimentos e clientes dele (`buildDashboard(timeZone, actor)` com `visibleToActor`; [SPEC-0001](../docs/specs/SPEC-0001.md), `TASK-0025`).

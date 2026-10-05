@@ -181,6 +181,30 @@ test("phones are masked in the form and in the table (SPEC-0005)", async ({ page
   await expect(page.getByRole("row", { name: /Cliente Fone E2E/ })).toContainText("(11) 98765-4321");
 });
 
+test("a professional registers a commitment and the agenda closes that period (SPEC-0004)", async ({ page }) => {
+  await login(page, "carlos@barbearia-centro.com");
+  const today = zonedParts(new Date(), "America/Sao_Paulo").date;
+  const nextMonday = addDays(startOfWeek(today), 7);
+
+  await page.getByRole("link", { name: "Minhas folgas" }).click();
+  await page.getByRole("button", { name: "Nova exceção" }).click();
+  // A professional doesn't choose who: it is them.
+  await expect(page.getByLabel("Quem não vai atender")).toHaveCount(0);
+  await page.getByRole("radio", { name: /Período do dia/ }).check();
+  await page.locator("#date").fill(nextMonday);
+  await page.locator("#startTime").fill("14:00");
+  await page.locator("#endTime").fill("16:00");
+  await page.getByRole("button", { name: "Compromisso", exact: true }).click();
+  await page.getByRole("button", { name: "Registrar" }).click();
+  await expect(page.getByRole("row", { name: /Compromisso/ })).toContainText("14:00–16:00");
+
+  await page.goto("/agenda");
+  await page.getByRole("button", { name: "Próximo período" }).click();
+  await expect(page.getByRole("note", { name: "Agenda fechada: Compromisso" })).toBeVisible();
+  await expect(page.getByRole("button", { name: `${dayMonthLabel(nextMonday)} 14:30` })).toBeDisabled();
+  await expect(page.getByRole("button", { name: `${dayMonthLabel(nextMonday)} 16:00` })).toBeEnabled();
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");

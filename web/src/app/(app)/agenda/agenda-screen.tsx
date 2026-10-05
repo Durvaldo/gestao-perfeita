@@ -17,7 +17,7 @@ import { addDays, dayMonthLabel, minutesToTime, startOfWeek, timeToMinutes } fro
 import { formatCurrency, formatDate } from "@/lib/format";
 import { zonedParts } from "@/lib/timezone";
 import { toastError, toastSuccess } from "@/lib/toast";
-import { AgendaCalendar, type CalendarAppointment, type CalendarWorkingHour } from "./agenda-calendar";
+import { AgendaCalendar, type CalendarAppointment, type CalendarBlock, type CalendarWorkingHour } from "./agenda-calendar";
 
 type Appointment = Omit<CalendarAppointment, "customer" | "services"> & {
   customerId: number;
@@ -75,6 +75,7 @@ export function AgendaScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- recompute the clock on each reload
   }, [timeZone, appointments]);
   const [workingHours, setWorkingHours] = useState<CalendarWorkingHour[]>([]);
+  const [blocks, setBlocks] = useState<CalendarBlock[]>([]);
   const [version, setVersion] = useState(0);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -119,11 +120,14 @@ export function AgendaScreen({
     Promise.all([
       api<Appointment[]>(`/api/appointments?professionalId=${professionalId}&from=${from}&to=${to}`),
       api<CalendarWorkingHour[]>(`/api/professionals/${professionalId}/working-hours`),
-    ]).then(([list, hours]) => {
+      // The professional's and the whole barbershop's exceptions (SPEC-0004).
+      api<CalendarBlock[]>(`/api/schedule-blocks?professionalId=${professionalId}&from=${from}&to=${to}`),
+    ]).then(([list, hours, exceptions]) => {
       if (cancelled) return;
       if (list.ok) setAppointments(list.data);
       else toastError(list.message);
       if (hours.ok) setWorkingHours(hours.data);
+      if (exceptions.ok) setBlocks(exceptions.data);
     });
     return () => {
       cancelled = true;
@@ -268,6 +272,7 @@ export function AgendaScreen({
             timeZone={timeZone}
             appointments={appointments}
             workingHours={workingHours}
+            blocks={blocks}
             onSelectSlot={selectedProfessional?.active === false ? undefined : (day, minutes) => openCreate(day, minutes)}
             onSelectAppointment={(a) => setDetail(a as Appointment)}
           />
