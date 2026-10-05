@@ -1,5 +1,5 @@
 ---
-status: bloqueada
+status: backlog
 modulo: web
 owner:
 criado-em: 2026-10-04
@@ -38,3 +38,4 @@ Se a `TASK-0039` já estiver concluída, cada ação oferece o botão de avisar 
 ## Notas de progresso
 
 - 2026-10-04 — Criada bloqueada: depende das questões em aberto Q1, Q3 e Q5 da SPEC-0004.
+- 2026-10-04 — Questões Q1, Q3 e Q5 decididas pelo responsável (ver SPEC-0004). Continua dependendo da `TASK-0030` e da `TASK-0031`.

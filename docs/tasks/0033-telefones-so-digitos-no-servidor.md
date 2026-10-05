@@ -1,5 +1,5 @@
 ---
-status: bloqueada
+status: backlog
 modulo: web
 owner:
 criado-em: 2026-10-04
@@ -37,3 +37,4 @@ Implementar o RF-1 e o RF-3 da [SPEC-0005](../specs/SPEC-0005.md):
 ## Notas de progresso
 
 - 2026-10-04 — Criada bloqueada: o formato gravado depende da Q1 da SPEC-0005.
+- 2026-10-04 — Desbloqueada: o responsável respondeu às questões pendentes (ver "Decisões do responsável" na SPEC de origem).

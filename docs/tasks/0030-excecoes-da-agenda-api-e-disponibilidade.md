@@ -1,5 +1,5 @@
 ---
-status: bloqueada
+status: backlog
 modulo: web
 owner:
 criado-em: 2026-10-04
@@ -37,3 +37,4 @@ Implementar o RF-1 e o RF-2 da [SPEC-0004](../specs/SPEC-0004.md):
 ## Notas de progresso
 
 - 2026-10-04 — Criada bloqueada: a SPEC-0004 precisa de refinamento, e a policy depende da Q2.
+- 2026-10-04 — Desbloqueada: o responsável respondeu às questões pendentes (ver "Decisões do responsável" na SPEC de origem).

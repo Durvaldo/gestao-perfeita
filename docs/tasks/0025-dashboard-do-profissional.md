@@ -1,5 +1,5 @@
 ---
-status: bloqueada
+status: backlog
 modulo: web
 owner:
 criado-em: 2026-10-04
@@ -36,3 +36,4 @@ Resolver a questão Q2 da [SPEC-0001](../specs/SPEC-0001.md), que estava pendent
 ## Notas de progresso
 
 - 2026-10-04 — Criada bloqueada: depende de uma decisão de produto (Q2 da SPEC-0001) ainda não tomada.
+- 2026-10-04 — Desbloqueada: o responsável respondeu às questões pendentes (ver "Decisões do responsável" na SPEC de origem).

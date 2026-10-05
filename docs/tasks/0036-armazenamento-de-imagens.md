@@ -1,5 +1,5 @@
 ---
-status: bloqueada
+status: backlog
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
@@ -30,3 +30,4 @@ Resolver a Q2 da [SPEC-0007](../specs/SPEC-0007.md). O projeto não tem onde gua
 
 ## Notas de progresso
 - 2026-10-04 — **Bloqueada antes de começar (human gate).** O armazenamento depende de onde o sistema vai rodar em produção, e isso ainda não foi decidido: a Fase 4 (deploy) não começou e não há `vercel.json`, `Dockerfile` nem ADR de deploy. Num deploy serverless (Vercel), disco local não funciona e o natural é o Vercel Blob; num servidor próprio, disco ou S3/R2 servem. As alternativas mudam materialmente e não há evidência para escolher. Além disso, o consumidor do upload (`TASK-0038`) depende da `TASK-0037`, que espera a `TASK-0034` → `TASK-0033` (bloqueada pela Q1 da SPEC-0005), então implementar agora não destrava nada. **Para desbloquear:** o responsável define o alvo de deploy (ex.: Vercel ou VPS) e, se for um serviço externo, fornece a conta/credencial.
+- 2026-10-04 — Desbloqueada: o responsável respondeu às questões pendentes (ver "Decisões do responsável" na SPEC de origem).
