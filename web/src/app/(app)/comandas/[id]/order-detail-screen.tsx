@@ -15,7 +15,7 @@ import { api, apiAll } from "@/lib/api-client";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { zonedParts } from "@/lib/timezone";
 import { toastError, toastSuccess } from "@/lib/toast";
-import { ORDER_STATUS_LABEL, orderStatusVariant, PAYMENT_METHOD_LABEL } from "../order-labels";
+import { isOutOfStock, ORDER_STATUS_LABEL, orderStatusVariant, PAYMENT_METHOD_LABEL, stockLabel } from "../order-labels";
 
 type Item = {
   id: number;
@@ -64,17 +64,27 @@ export function OrderDetailScreen({ orderId, timeZone }: { orderId: string; time
     };
   }, [orderId, version]);
 
+  // Reloaded with the order (`version`), so the stock shown in the select follows
+  // every item added or removed (SPEC-0002).
   useEffect(() => {
     let cancelled = false;
     Promise.all([apiAll<Catalog>("/api/services"), apiAll<Catalog>("/api/products")]).then(([s, p]) => {
       if (cancelled) return;
       if (s.ok) setServices(s.data.filter((x) => x.active));
-      if (p.ok) setProducts(p.data.filter((x) => x.active));
+      if (p.ok) {
+        const active = p.data.filter((x) => x.active);
+        setProducts(active);
+        // A selected product that just ran out can't be added again.
+        setItemForm((form) => {
+          const selected = active.find((x) => String(x.id) === form.productId);
+          return selected && isOutOfStock(selected) ? { ...form, productId: "" } : form;
+        });
+      }
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [version]);
 
   const reload = () => setVersion((v) => v + 1);
 
@@ -253,9 +263,9 @@ export function OrderDetailScreen({ orderId, timeZone }: { orderId: string; time
                       </SelectTrigger>
                       <SelectContent>
                         {products.map((p) => (
-                          <SelectItem key={p.id} value={String(p.id)}>
+                          <SelectItem key={p.id} value={String(p.id)} disabled={isOutOfStock(p)}>
                             {p.name} · {formatCurrency(p.price)}
-                            {p.stockQuantity === null || p.stockQuantity === undefined ? "" : ` · estoque ${p.stockQuantity}`}
+                            {stockLabel(p)}
                           </SelectItem>
                         ))}
                       </SelectContent>

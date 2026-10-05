@@ -55,6 +55,10 @@ test("main cycle: appointment → order → payment → financial report and das
   await page.getByRole("button", { name: "Adicionar", exact: true }).click();
   await expect(page.getByRole("cell", { name: "Pomada modeladora" })).toBeVisible();
   await expect(page.getByText(money("84,90")).first()).toBeVisible(); // 45,00 + 39,90
+  // The select follows the stock without reloading the page (seed: 20 → 19, SPEC-0002).
+  await page.locator("#productId").click();
+  await expect(page.getByRole("option", { name: /Pomada modeladora.*estoque 19/ })).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: /Fechar comanda/ }).click();
   await expect(page.getByText("Paga", { exact: true })).toBeVisible();
   await expect(page.getByText(/Pix · pago em/)).toBeVisible();

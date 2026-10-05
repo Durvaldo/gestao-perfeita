@@ -1,5 +1,5 @@
 ---
-status: em-andamento
+status: concluida
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
@@ -19,9 +19,9 @@ Corrigir o bug do RF-1 da [SPEC-0002](../specs/SPEC-0002.md). A tela de detalhe 
 
 ## Critérios de conclusão
 
-- [ ] Produto com estoque 3: adicionar 2 → o select mostra `estoque 1` sem recarregar a página; adicionar 1 → desabilitado, "sem estoque"; remover → volta a `estoque 1`.
-- [ ] Produto com estoque livre (`null`) continua sempre selecionável.
-- [ ] Teste de componente ou E2E cobrindo a atualização; `npm test` e `npm run lint` passando.
+- [x] Produto com estoque 3: adicionar 2 → o select mostra `estoque 1` sem recarregar a página; adicionar 1 → desabilitado, "sem estoque"; remover → volta a `estoque 1`.
+- [x] Produto com estoque livre (`null`) continua sempre selecionável.
+- [x] Teste de componente ou E2E cobrindo a atualização; `npm test` e `npm run lint` passando.
 
 ## Referências
 
@@ -29,3 +29,4 @@ Corrigir o bug do RF-1 da [SPEC-0002](../specs/SPEC-0002.md). A tela de detalhe 
 - `web/src/app/(app)/comandas/[id]/order-detail-screen.tsx`
 
 ## Notas de progresso
+- 2026-10-04 — Implementado. A lista de produtos da tela de detalhe agora recarrega junto com a comanda (`useEffect` depende de `version`). Produto controlado com saldo zero aparece desabilitado como "sem estoque", e é tirado da seleção se acabou de zerar. A regra ficou em funções puras (`isOutOfStock`, `stockLabel` em `comandas/order-labels.ts`), com testes unitários. O E2E do ciclo principal confere que o select vai de "estoque 20" para "estoque 19" depois de adicionar o produto, sem recarregar a página. Verificado: `npm test`, `npm run lint`, `npx tsc --noEmit` e `npm run test:e2e` (4).
