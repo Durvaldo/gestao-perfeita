@@ -111,6 +111,21 @@ describe("catalog CRUD (customers, services, products)", () => {
     });
   });
 
+  test("customer phones are stored as digits only (SPEC-0005)", async () => {
+    const masked = await call(customerRoutes.collection.POST, { cookie: admin, body: { name: "Ana", phone: "(11) 98765-4321" } });
+    expect(masked.status).toBe(201);
+    expect(masked.body.phone).toBe("11987654321");
+
+    const landline = await call(customerRoutes.collection.POST, { cookie: admin, body: { name: "Bia", phone: "11 3333-4444" } });
+    expect(landline.body.phone).toBe("1133334444");
+
+    for (const phone of ["98765-4321", "+55 (11) 98765-4321", "abc"]) {
+      const invalid = await call(customerRoutes.collection.POST, { cookie: admin, body: { name: "Caio", phone } });
+      expect(invalid.status).toBe(422);
+      expect(invalid.body.errors).toEqual({ phone: ["O telefone deve ter DDD e 8 ou 9 dígitos."] });
+    }
+  });
+
   test("service and product validation messages", async () => {
     const service = await call(serviceRoutes.collection.POST, {
       cookie: admin,

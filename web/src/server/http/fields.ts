@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { INVALID_PHONE_MESSAGE, isValidPhoneDigits, phoneDigits } from "@/lib/phone";
 
 // Reusable Zod field builders that accept the same inputs as the legacy Laravel
 // rules (e.g. "30" for an integer, "1" for a boolean). Inputs were already
@@ -43,3 +44,12 @@ export const isoDate = () => z.iso.date().transform((value) => new Date(`${value
 
 /** Formats a date-only column back to "YYYY-MM-DD" for responses. */
 export const formatIsoDate = (value: Date | null) => (value ? value.toISOString().slice(0, 10) : null);
+
+const toPhoneDigits = (value: unknown) => (typeof value === "string" ? phoneDigits(value) : value);
+const phoneString = z.string().refine(isValidPhoneDigits, { message: INVALID_PHONE_MESSAGE });
+
+/** Required Brazilian phone, stored as digits only (SPEC-0005): "(11) 98765-4321" → "11987654321". */
+export const phone = () => z.preprocess(toPhoneDigits, phoneString);
+
+/** Optional Brazilian phone, digits only; null clears it. */
+export const optionalPhone = () => z.preprocess(toPhoneDigits, phoneString.nullable().optional());

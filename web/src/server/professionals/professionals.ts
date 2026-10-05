@@ -6,7 +6,7 @@ import { NotFoundError, ValidationError } from "@/lib/http-errors";
 import { hashPassword } from "@/lib/password";
 import { requireTenantId } from "@/lib/tenancy/context";
 import { parseId } from "@/server/http/crud";
-import { boolean, decimal, optionalText, text } from "@/server/http/fields";
+import { boolean, decimal, optionalPhone, text } from "@/server/http/fields";
 import { pageFromRequest, paginate } from "@/server/http/pagination";
 import { apiRoute, created, noContent } from "@/server/http/route";
 import { parseBody } from "@/server/http/validation";
@@ -24,7 +24,7 @@ export const createProfessionalSchema = z.object({
   name: text(255),
   email: z.email().max(255),
   password: z.string().min(8),
-  phone: optionalText(30),
+  phone: optionalPhone(),
   ...profileFields,
 });
 

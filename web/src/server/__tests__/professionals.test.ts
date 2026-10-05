@@ -81,6 +81,22 @@ describe("professionals API", () => {
     });
   });
 
+  test("the professional's phone is optional and stored as digits only (SPEC-0005)", async () => {
+    const withPhone = await call(collection.POST, {
+      cookie: admin,
+      body: { ...newProfessional("fone@barbearia-teste.com"), phone: "(11) 97777-6666" },
+    });
+    expect(withPhone.status).toBe(201);
+    expect(withPhone.body.user.phone).toBe("11977776666");
+
+    const invalid = await call(collection.POST, { cookie: admin, body: { ...newProfessional("fone2@barbearia-teste.com"), phone: "1234" } });
+    expect(invalid.body.errors).toEqual({ phone: ["O telefone deve ter DDD e 8 ou 9 dígitos."] });
+
+    const without = await call(collection.POST, { cookie: admin, body: { ...newProfessional("fone3@barbearia-teste.com"), phone: "" } });
+    expect(without.status).toBe(201);
+    expect(without.body.user.phone).toBeNull();
+  });
+
   test("creation is atomic: if a later step fails, the user is not kept", async () => {
     // Make the login-account insert fail (unique providerId+accountId) for the next user id.
     const [{ next }] = await unscopedDb.$queryRaw<{ next: bigint }[]>`

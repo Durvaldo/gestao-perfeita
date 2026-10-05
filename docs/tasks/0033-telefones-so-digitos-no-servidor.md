@@ -1,5 +1,5 @@
 ---
-status: em-andamento
+status: concluida
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
@@ -24,10 +24,10 @@ Implementar o RF-1 e o RF-3 da [SPEC-0005](../specs/SPEC-0005.md):
 
 ## Critérios de conclusão
 
-- [ ] Decisão registrada na SPEC-0005.
-- [ ] Testes: `"(11) 98765-4321"` → `"11987654321"`; 10 dígitos aceito; sem DDD → 422.
-- [ ] Migration aplicada no banco de dev; telefones do seed só com dígitos.
-- [ ] `npm test`, `npm run lint` e `npx tsc --noEmit` passando.
+- [x] Decisão registrada na SPEC-0005.
+- [x] Testes: `"(11) 98765-4321"` → `"11987654321"`; 10 dígitos aceito; sem DDD → 422.
+- [x] Migration aplicada no banco de dev; telefones do seed só com dígitos.
+- [x] `npm test`, `npm run lint` e `npx tsc --noEmit` passando.
 
 ## Referências
 
@@ -38,3 +38,4 @@ Implementar o RF-1 e o RF-3 da [SPEC-0005](../specs/SPEC-0005.md):
 
 - 2026-10-04 — Criada bloqueada: o formato gravado depende da Q1 da SPEC-0005.
 - 2026-10-04 — Desbloqueada: o responsável respondeu às questões pendentes (ver "Decisões do responsável" na SPEC de origem).
+- 2026-10-04 — Implementado. `src/lib/phone.ts` (`phoneDigits`, `isValidPhoneDigits`, isomórfico) e os builders `phone()`/`optionalPhone()` em `fields.ts`: tiram tudo que não é dígito e validam 10 ou 11 dígitos ("O telefone deve ter DDD e 8 ou 9 dígitos."). Aplicados a clientes (obrigatório) e ao telefone do profissional/usuário (opcional). A barbearia (`tenants.phone`) ainda não tem API de escrita; quando tiver, deve usar `optionalPhone()`. Migration `20261004230000_phone_digits_only`: limpa `customers`, `users` e `tenants` e lista como NOTICE o que ficar fora de 10–11 dígitos, sem apagar nada. No banco de dev, os 12 clientes ficaram válidos. Seed só com dígitos. Testes: unitários de `phone.ts`, API de clientes (normaliza, fixo, inválidos incluindo `+55`) e de profissionais (opcional, normaliza, inválido). Verificado: `npm test` (222), `npm run lint`, `npx tsc --noEmit` e `npm run test:e2e` (6). **Produção (Vercel):** o build é só `next build` e não aplica migrations, então é preciso rodar `npx prisma migrate deploy` com o `DATABASE_URL` de produção.

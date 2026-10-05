@@ -60,7 +60,7 @@ Fonte: `package.json`.
 - `src/lib/authz/`: `policies.ts` (matriz de permissões em funções puras: `can`, `visibleToActor`, `visibleProfessionals`) e `guard.ts` (`requireUser` → 401, `authorize` → 403) ([ADR-0006](../docs/decisions/0006-autorizacao-policies-funcoes-puras.md)).
 - `src/lib/http-errors.ts`: `UnauthenticatedError`, `ForbiddenError`, `NotFoundError`, `InUseError` (409; o `P2003` do Prisma também vira 409), `ValidationError` (422 `{ message, errors }`; `ValidationError.field()` para regras de negócio), com as mensagens pt-BR do legado, e `errorResponse(error)`, que converte essas classes e o `P2025` do Prisma em JSON com o status certo.
 - `src/server/http/`: infraestrutura da API ([ADR-0007](../docs/decisions/0007-convencoes-camada-servidor.md)): `route.ts` (`apiRoute`, `created`, `noContent`), `validation.ts` (`parseBody`, `parseQuery`, `validate`), `references.ts` (`assertReferencesInTenant`), `pagination.ts` (`pageFromRequest`, `paginate`), `serialize.ts` (`toJsonValue`).
-- `src/server/http/fields.ts` (builders de campos Zod compatíveis com as regras do Laravel) e `src/server/http/crud.ts` (`crudRoutes`: o `apiResource` genérico para recursos simples, ver a atualização da ADR-0007).
+- `src/server/http/fields.ts` (builders de campos Zod compatíveis com as regras do Laravel; `phone()`/`optionalPhone()` gravam telefone só com dígitos, via `src/lib/phone.ts`, [SPEC-0005](../docs/specs/SPEC-0005.md)) e `src/server/http/crud.ts` (`crudRoutes`: o `apiResource` genérico para recursos simples, ver a atualização da ADR-0007).
 - `src/server/<domínio>/`: schema Zod, rótulos pt-BR e handlers/serviços de cada módulo (`customers/`, `services/`, `products/`, `professionals/`, `working-hours/`, `appointments/`, `orders/`, `financial/`, `dashboard/`). As regras de agenda (expediente, conflito, trava) ficam em `src/server/appointments/rules.ts`.
 - `src/lib/timezone.ts`: `zonedParts`, `zonedToUtc`, `parseDateTimeInput`, `isDateTimeInput` (fuso da barbearia, via `Intl`; [ADR-0009](../docs/decisions/0009-agendamento-fuso-por-tenant-e-regras.md)). Os Route Handlers em `src/app/api/**` só reexportam (`export const { GET, POST } = customerRoutes.collection`).
 - `src/app/api/user/route.ts`: `GET /api/user`, equivalente ao legado (usuário + `professional`, ou 401).
@@ -210,7 +210,7 @@ try {
 |---|---|---|
 | `/api/auth/*` | Better Auth | `sign-in/email`, `sign-out`, `get-session` |
 | `/api/user` | GET | usuário atual + `professional` |
-| `/api/customers`, `/api/customers/[id]` | GET, POST / GET, PUT, PATCH, DELETE | `birthDate` como `"YYYY-MM-DD"` |
+| `/api/customers`, `/api/customers/[id]` | GET, POST / GET, PUT, PATCH, DELETE | `birthDate` como `"YYYY-MM-DD"`; `phone` gravado só com dígitos (DDD + 8 ou 9; aceita com máscara; SPEC-0005) |
 | `/api/services`, `/api/services/[id]` | idem | `price` como `"0.00"` |
 | `/api/products`, `/api/products/[id]` | idem | `stockQuantity: null` = sem controle de estoque |
 | `/api/professionals`, `/api/professionals/[id]` | GET, POST / GET, PUT, PATCH, DELETE | POST cria usuário + login + profissional; PUT altera só o perfil (`defaultCommissionRate`, `photoUrl`, `active`); **DELETE desativa** (bloqueia login e derruba sessões) |
