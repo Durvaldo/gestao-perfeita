@@ -23,7 +23,7 @@ const matrix: Record<string, Record<string, Expectation>> = {
   professional: { viewAny: "staff", view: "own", create: "admin", update: "admin", delete: "admin" },
   workingHour: { viewAny: "own", view: "own", create: "own", update: "own", delete: "own" },
   appointment: { viewAny: "staff", view: "own", create: "staff", update: "own", delete: "admin" },
-  order: { viewAny: "staff", view: "own", create: "staff", update: "own" },
+  order: { viewAny: "staff", view: "own", create: "staff", createFor: "own", update: "own" },
   financialEntry: { viewAny: "admin", view: "admin", create: "admin", update: "admin", delete: "admin" },
   dashboard: { view: "staff" },
 };

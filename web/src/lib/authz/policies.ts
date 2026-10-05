@@ -64,8 +64,10 @@ export const policies = {
   order: {
     viewAny: isStaff,
     view: adminOrOwner,
-    // Legacy parity: a professional may open an order for any professional.
     create: isStaff,
+    // SPEC-0001: a professional opens orders only for themselves (the legacy app
+    // allowed any professional). Subject: the order's professional.
+    createFor: adminOrOwner,
     update: adminOrOwner,
   },
   financialEntry: {

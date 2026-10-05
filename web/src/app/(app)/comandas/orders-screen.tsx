@@ -159,20 +159,23 @@ export function OrdersScreen({ ownProfessionalId }: { ownProfessionalId: number 
               </SelectContent>
             </Select>
           </FormField>
-          <FormField id="professionalId" label="Barbeiro" errors={errors.professionalId}>
-            <Select value={form.professionalId} onValueChange={(professionalId) => setForm({ ...form, professionalId })}>
-              <SelectTrigger id="professionalId" className="w-full">
-                <SelectValue placeholder="Selecione o barbeiro" />
-              </SelectTrigger>
-              <SelectContent>
-                {professionals.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.user.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
+          {/* A professional opens orders only for themselves (SPEC-0001). */}
+          {ownProfessionalId ? null : (
+            <FormField id="professionalId" label="Barbeiro" errors={errors.professionalId}>
+              <Select value={form.professionalId} onValueChange={(professionalId) => setForm({ ...form, professionalId })}>
+                <SelectTrigger id="professionalId" className="w-full">
+                  <SelectValue placeholder="Selecione o barbeiro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {professionals.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
         </form>
       </AppModal>
     </div>

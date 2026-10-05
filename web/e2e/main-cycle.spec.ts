@@ -95,6 +95,13 @@ test("a professional does not see the catalog screens nor their colleagues (SPEC
     await expect(page.getByText("Página não encontrada")).toBeVisible();
   }
 
+  // Opens a walk-in order without choosing the professional: it is theirs.
+  await page.goto("/comandas");
+  await page.getByRole("button", { name: "Nova comanda" }).click();
+  await expect(page.getByLabel("Cliente")).toBeVisible();
+  await expect(page.getByLabel("Barbeiro")).toHaveCount(0);
+
+  await page.goto("/");
   await page.getByRole("link", { name: "Meus horários" }).click();
   await expect(page.getByRole("heading", { name: "Meus horários" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "Carlos Souza", exact: true })).toHaveCount(1);

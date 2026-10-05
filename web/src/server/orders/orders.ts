@@ -109,10 +109,32 @@ const index = apiRoute(async ({ request, user }) => {
   });
 });
 
+/**
+ * A professional opening a walk-in order doesn't pick the professional: it is
+ * them (SPEC-0001). Fills `professionalId` before validation, so the "required"
+ * rule still applies to admins.
+ */
+function withOwnProfessional(ownProfessionalId: number) {
+  return z.preprocess((body) => {
+    if (typeof body !== "object" || body === null) return body;
+    const value = body as Record<string, unknown>;
+    const missing = value.professionalId === undefined || value.professionalId === null || value.professionalId === "";
+    return !value.appointmentId && missing ? { ...value, professionalId: ownProfessionalId } : value;
+  }, createOrderSchema);
+}
+
 // POST /api/orders — from an appointment (prefilled with its services) or walk-in.
 const store = apiRoute(async ({ request, user }) => {
   authorize(user, "order", "create");
-  const input = await parseBody(request, createOrderSchema, orderLabels);
+  const ownProfessionalId = user.role === "professional" ? user.professional?.id : undefined;
+  const input = await parseBody(
+    request,
+    ownProfessionalId ? withOwnProfessional(ownProfessionalId) : createOrderSchema,
+    orderLabels,
+  );
+  if (!input.appointmentId) {
+    authorize(user, "order", "createFor", { professionalId: input.professionalId! });
+  }
   await assertReferencesInTenant(
     {
       appointmentId: { model: "appointment", id: input.appointmentId },
@@ -128,6 +150,7 @@ const store = apiRoute(async ({ request, user }) => {
       : null;
 
     if (appointment) {
+      authorize(user, "order", "createFor", appointment);
       // One order per appointment (ADR-0011): no billing twice, no billing a cancellation.
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(2, ${appointment.id}::int)::text`;
       if (appointment.status === "cancelled") {

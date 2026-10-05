@@ -1,5 +1,5 @@
 ---
-status: em-andamento
+status: concluida
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
@@ -24,11 +24,11 @@ Implementar o RF-3 e o RF-4 da [SPEC-0001](../specs/SPEC-0001.md):
 
 ## Critérios de conclusão
 
-- [ ] `POST /api/orders` feito por profissional: sem `professionalId` → 201, com ele como barbeiro; com o `professionalId` de um colega → recusado (403 ou 422, mensagem em pt-BR).
-- [ ] Comanda criada a partir de um agendamento continua herdando o profissional do agendamento.
-- [ ] Tela de comandas: para o profissional, o campo "Barbeiro" fica oculto ou fixo; abrir a comanda leva ao detalhe sem erro.
-- [ ] `policies.ts` e a matriz de testes atualizadas; ADR-0006 e ADR-0011 com a nota apontando para a SPEC-0001.
-- [ ] Testes de API; `npm test`, `npm run lint` e `npx tsc --noEmit` passando; o E2E da visão do profissional (`npm run test:e2e`) passando.
+- [x] `POST /api/orders` feito por profissional: sem `professionalId` → 201, com ele como barbeiro; com o `professionalId` de um colega → recusado (403 ou 422, mensagem em pt-BR).
+- [x] Comanda criada a partir de um agendamento continua herdando o profissional do agendamento.
+- [x] Tela de comandas: para o profissional, o campo "Barbeiro" fica oculto ou fixo; abrir a comanda leva ao detalhe sem erro.
+- [x] `policies.ts` e a matriz de testes atualizadas; ADR-0006 e ADR-0011 com a nota apontando para a SPEC-0001.
+- [x] Testes de API; `npm test`, `npm run lint` e `npx tsc --noEmit` passando; o E2E da visão do profissional (`npm run test:e2e`) passando.
 
 ## Referências
 
@@ -37,3 +37,4 @@ Implementar o RF-3 e o RF-4 da [SPEC-0001](../specs/SPEC-0001.md):
 - `web/src/server/orders/orders.ts`, `web/src/app/(app)/comandas/orders-screen.tsx`
 
 ## Notas de progresso
+- 2026-10-04 — Implementado. Política nova `order.createFor` (admin ou dono), checada com o profissional da comanda: na avulsa, `professionalId` vazio vira o do profissional logado (via `z.preprocess`, então o admin continua obrigado a informar) e um colega → 403; a partir de agendamento, só se o agendamento for dele (antes era permitido pela paridade com o legado). Na tela, o campo "Barbeiro" não aparece para o profissional. Notas de superação nas ADR-0006 e ADR-0011. Testes novos: 2 de API em `orders.test.ts`, a matriz de policies e um passo no E2E da visão do profissional. Verificado: `npm test` (203), `npm run lint`, `npx tsc --noEmit` e `npm run test:e2e` (4).

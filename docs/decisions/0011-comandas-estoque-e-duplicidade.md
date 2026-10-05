@@ -45,3 +45,7 @@ O responsável decidiu, em 2026-10-03: **bloquear venda sem estoque** e **uma co
 - A tela de comanda (`TASK-0015`) precisa exibir as mensagens 422 de estoque e de duplicidade (vêm no `message`).
 - O relatório financeiro (`TASK-0016`) deve filtrar comissões por `orders.paid_at`.
 - Para cancelar uma comanda aberta, ainda não há endpoint (o legado também não tinha); se for necessário, vira uma task nova.
+
+## Atualização — 2026-10-04 (SPEC-0001)
+
+O item "o profissional cria comanda para qualquer colega" foi superado pela [SPEC-0001](../specs/SPEC-0001.md) (`TASK-0023`): o profissional abre comanda só para si mesmo. Na avulsa, o `professionalId` é preenchido com o dele quando não é enviado, e um colega é recusado com 403. A partir de um agendamento, só se o agendamento for dele.

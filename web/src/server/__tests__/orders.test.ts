@@ -217,6 +217,31 @@ describe("orders API", () => {
     expect(res.body.errors).toEqual({ productId: ["O valor selecionado para produto é inválido."] });
   });
 
+  test("a professional opens walk-in orders only for themselves (SPEC-0001)", async () => {
+    const own = await call(collection.POST, { cookie: carlos, body: { customerId: customer } });
+    expect(own.status).toBe(201);
+    expect(own.body.professionalId).toBe(carlosPro);
+
+    const forColleague = await walkIn(rafaelPro, carlos);
+    expect(forColleague.status).toBe(403);
+    expect(await unscopedDb.order.count({ where: { professionalId: rafaelPro } })).toBe(0);
+
+    // The admin still opens orders for anyone, and must say for whom.
+    expect((await walkIn(rafaelPro)).status).toBe(201);
+    const missing = await call(collection.POST, { cookie: admin, body: { customerId: customer } });
+    expect(missing.status).toBe(422);
+    expect(missing.body.errors.professionalId).toBeDefined();
+  });
+
+  test("a professional cannot open an order from a colleague's appointment (SPEC-0001)", async () => {
+    const appointment = await appointmentWith("40.00");
+    await unscopedDb.appointment.update({ where: { id: appointment.id }, data: { professionalId: rafaelPro } });
+
+    const res = await call(collection.POST, { cookie: carlos, body: { appointmentId: appointment.id } });
+    expect(res.status).toBe(403);
+    expect(await unscopedDb.order.count({ where: { appointmentId: appointment.id } })).toBe(0);
+  });
+
   test("a professional cannot manage a colleague's order, but manages their own", async () => {
     const colleagues = await walkIn(rafaelPro);
     const own = await walkIn(carlosPro, carlos);

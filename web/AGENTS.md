@@ -187,7 +187,7 @@ try {
 }
 ```
 
-- Matriz: `customer`/`service`/`product` → leitura para staff (admin + professional), escrita só para admin. `professional` → o admin lista e vê todos; o profissional só o próprio registro (`visibleProfessionals(user)` na listagem, [SPEC-0001](../docs/specs/SPEC-0001.md)); escrita só para admin. `workingHour` → leitura e escrita pelo admin ou pelo dono (SPEC-0001). `appointment`/`order` → ver e editar pelo admin ou pelo dono, criar por qualquer staff; excluir agendamento só admin. `financialEntry` → só admin. `dashboard` → staff. `super_admin` e `customer` não têm permissão no painel.
+- Matriz: `customer`/`service`/`product` → leitura para staff (admin + professional), escrita só para admin. `professional` → o admin lista e vê todos; o profissional só o próprio registro (`visibleProfessionals(user)` na listagem, [SPEC-0001](../docs/specs/SPEC-0001.md)); escrita só para admin. `workingHour` → leitura e escrita pelo admin ou pelo dono (SPEC-0001). `appointment`/`order` → ver e editar pelo admin ou pelo dono, criar por qualquer staff (a comanda, só para si mesmo: `order.createFor`, SPEC-0001); excluir agendamento só admin. `financialEntry` → só admin. `dashboard` → staff. `super_admin` e `customer` não têm permissão no painel.
 - Menu e telas (SPEC-0001): `Financeiro`, `Serviços` e `Produtos` são só do admin (as páginas respondem 404 ao profissional). `/barbeiros` aparece para o profissional como "Meus horários", só com o registro dele. `visibleNavItems(isAdmin)` em `nav-items.ts` monta o menu.
 - Listagens de agendamentos e comandas: some `visibleToActor(user)` ao `where` (o profissional vê só os próprios).
 - Mudou uma permissão? Atualize `policies.ts` **e** a matriz em `src/lib/authz/__tests__/policies.test.ts`.
@@ -216,7 +216,7 @@ try {
 | `/api/professionals`, `/api/professionals/[id]` | GET, POST / GET, PUT, PATCH, DELETE | POST cria usuário + login + profissional; PUT altera só o perfil (`defaultCommissionRate`, `photoUrl`, `active`); **DELETE desativa** (bloqueia login e derruba sessões) |
 | `/api/professionals/[id]/working-hours` | GET, POST | horários do profissional (`weekday` 0 = domingo; `"HH:MM"`) |
 | `/api/working-hours/[id]` | GET, PUT, PATCH, DELETE | o profissional altera só os próprios; o admin, todos |
-| `/api/orders`, `/api/orders/[id]` | GET, POST / GET | comanda avulsa (`customerId` + `professionalId`) ou de agendamento (`appointmentId`, pré-populada com os serviços); uma por agendamento |
+| `/api/orders`, `/api/orders/[id]` | GET, POST / GET | comanda avulsa (`customerId` + `professionalId`) ou de agendamento (`appointmentId`, pré-populada com os serviços); uma por agendamento; o profissional abre só para si (sem `professionalId`, assume o dele; colega → 403) |
 | `/api/orders/[id]/items`, `/api/orders/[id]/items/[itemId]` | POST / DELETE | `{ type: "service" \| "product", serviceId \| productId, quantity? }`; produto baixa estoque (nunca negativo) e remover devolve |
 | `/api/orders/[id]/close` | POST | `{ paymentMethod: "cash" \| "pix" \| "debit_card" \| "credit_card" }` → `paid`, `paidAt`, lançamento `income`/`venda`, agendamento `completed` |
 | `/api/financial-entries`, `/api/financial-entries/[id]` | GET, POST / GET, PUT, PATCH, DELETE | só admin; `type: "income" \| "expense"`, `entryDate` `"YYYY-MM-DD"`; lista por data (mais recentes primeiro) |
