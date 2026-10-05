@@ -87,13 +87,14 @@ export default async function DashboardPage() {
       </div>
 
       <Card className="gap-0 overflow-hidden p-0">
-        <CardHeader className="p-6">
+        <CardHeader className="pt-(--card-spacing) pb-3">
           <CardTitle className="flex items-center gap-2">
             <Cake className="size-4 text-muted-foreground" />
             Próximos aniversários
           </CardTitle>
         </CardHeader>
-        <Table>
+        {/* Edge cells line up with the card's own spacing (16px); taller rows. */}
+        <Table className="[&_td]:py-3 [&_td:first-child]:ps-(--card-spacing) [&_td:last-child]:pe-(--card-spacing) [&_th]:h-11 [&_th:first-child]:ps-(--card-spacing) [&_th:last-child]:pe-(--card-spacing)">
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
