@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api, apiAll } from "@/lib/api-client";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { AffectedAppointmentsDialog } from "./affected-appointments-dialog";
 import {
   blockPeriodLabel,
   blockToForm,
@@ -25,6 +26,7 @@ import {
 
 type ProfessionalOption = { id: number; active: boolean; user: { name: string } };
 type SavedBlock = ScheduleBlock & { affectedAppointments: { id: number }[] };
+type ListedBlock = ScheduleBlock & { affectedCount: number };
 
 /**
  * Schedule exceptions (SPEC-0004): days or periods when the barbershop, or one
@@ -35,14 +37,17 @@ export function ExceptionsScreen({
   ownProfessionalId,
   timeZone,
   today,
+  barbershop,
 }: {
   isAdmin: boolean;
   ownProfessionalId: number | null;
   timeZone: string;
   today: string;
+  barbershop: string;
 }) {
   const confirm = useConfirm();
-  const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
+  const [blocks, setBlocks] = useState<ListedBlock[]>([]);
+  const [affectedOf, setAffectedOf] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
   const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
@@ -57,7 +62,7 @@ export function ExceptionsScreen({
   // Upcoming and current exceptions (past ones are history).
   useEffect(() => {
     let cancelled = false;
-    api<ScheduleBlock[]>(`/api/schedule-blocks?from=${today}`).then((response) => {
+    api<ListedBlock[]>(`/api/schedule-blocks?from=${today}`).then((response) => {
       if (cancelled) return;
       setLoading(false);
       if (response.ok) setBlocks(response.data);
@@ -112,6 +117,8 @@ export function ExceptionsScreen({
     );
     setOpen(false);
     setVersion((v) => v + 1);
+    // Straight to the appointments that now need action (SPEC-0004 Q1).
+    if (affected > 0) setAffectedOf(response.data.id);
   }
 
   async function remove(block: ScheduleBlock) {
@@ -154,11 +161,12 @@ export function ExceptionsScreen({
               <TableHead>Quem</TableHead>
               <TableHead>Período</TableHead>
               <TableHead className="hidden md:table-cell">Motivo</TableHead>
+              <TableHead>Agendamentos</TableHead>
               <TableHead className="text-end">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableState loading={loading} empty={blocks.length === 0} columns={4} emptyText="Nenhuma exceção a partir de hoje." />
+            <TableState loading={loading} empty={blocks.length === 0} columns={5} emptyText="Nenhuma exceção a partir de hoje." />
             {!loading &&
               blocks.map((block) => (
                 <TableRow key={block.id}>
@@ -167,6 +175,15 @@ export function ExceptionsScreen({
                   </TableCell>
                   <TableCell>{blockPeriodLabel(block, timeZone)}</TableCell>
                   <TableCell className="hidden md:table-cell">{block.reason ?? "—"}</TableCell>
+                  <TableCell>
+                    {block.affectedCount > 0 ? (
+                      <Button variant="outline" size="sm" className="border-amber-500 text-amber-700" onClick={() => setAffectedOf(block.id)}>
+                        {block.affectedCount} precisa(m) de ação
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-end whitespace-nowrap">
                     {canManage(block) ? (
                       <>
@@ -287,6 +304,18 @@ export function ExceptionsScreen({
           </div>
         </form>
       </AppModal>
+
+      <AffectedAppointmentsDialog
+        blockId={affectedOf}
+        onClose={() => {
+          setAffectedOf(null);
+          setVersion((v) => v + 1);
+        }}
+        isAdmin={isAdmin}
+        professionals={professionals}
+        timeZone={timeZone}
+        barbershop={barbershop}
+      />
     </div>
   );
 }

@@ -221,6 +221,50 @@ test("WhatsApp buttons use the barbershop's templates (SPEC-0008)", async ({ pag
   await expect(link).toHaveAttribute("target", "_blank");
 });
 
+test("a sick leave: the affected appointments are transferred or cancelled (SPEC-0004)", async ({ page }) => {
+  await login(page, "admin@barbearia-centro.com");
+  const today = zonedParts(new Date(), "America/Sao_Paulo").date;
+  const nextTuesday = addDays(startOfWeek(today), 8);
+
+  // Two appointments of Rafael next Tuesday, created through the API with the admin session.
+  const all = async <T,>(path: string) => ((await (await page.request.get(path)).json()) as { data: T[] }).data;
+  const customers = await all<{ id: number; name: string }>("/api/customers");
+  const services = await all<{ id: number; name: string }>("/api/services");
+  const professionals = await all<{ id: number; user: { name: string } }>("/api/professionals");
+  const rafael = professionals.find((p) => p.user.name === "Rafael Lima")!;
+  for (const [time, customer] of [["10:00", customers[0]], ["11:00", customers[1]]] as const) {
+    const res = await page.request.post("/api/appointments", {
+      data: { customerId: customer.id, professionalId: rafael.id, startsAt: `${nextTuesday}T${time}`, serviceIds: [services[0].id] },
+    });
+    expect(res.status()).toBe(201);
+  }
+
+  await page.goto("/excecoes");
+  await page.getByRole("button", { name: "Nova exceção" }).click();
+  await pick(page, "#target", "Rafael Lima");
+  await page.locator("#startDate").fill(nextTuesday);
+  await page.locator("#endDate").fill(nextTuesday);
+  await page.getByRole("button", { name: "Atestado", exact: true }).click();
+  await page.getByRole("button", { name: "Registrar" }).click();
+
+  // The dialog opens with the appointments that need action.
+  const rows = page.getByTestId("affected-appointment");
+  await expect(rows).toHaveCount(2);
+
+  await rows.first().getByRole("button", { name: "Transferir" }).click();
+  await page.getByRole("combobox", { name: "Transferir para" }).click();
+  await page.getByRole("option", { name: "Carlos Souza" }).click();
+  await page.getByRole("button", { name: "Confirmar transferência" }).click();
+  await expect(rows).toHaveCount(1);
+
+  await rows.first().getByRole("button", { name: "Cancelar" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Cancelar agendamento" }).click();
+  await expect(rows).toHaveCount(0);
+
+  // Both can now be told through WhatsApp.
+  await expect(page.getByRole("link", { name: "Avisar no WhatsApp" })).toHaveCount(2);
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");

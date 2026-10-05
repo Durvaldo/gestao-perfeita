@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Prisma, ScheduleBlock } from "@/generated/prisma/client";
 import { authorize } from "@/lib/authz/guard";
+import { type Actor, visibleToActor } from "@/lib/authz/policies";
 import type { CurrentUser } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { NotFoundError, ValidationError } from "@/lib/http-errors";
@@ -108,22 +109,31 @@ export const appliesTo = (professionalId: number): Prisma.ScheduleBlockWhereInpu
 
 /**
  * Non-cancelled appointments inside an exception (SPEC-0004 RF-3: they "need
- * action"). A whole-barbershop exception affects every professional.
+ * action"), limited to the ones the actor may see: a whole-barbershop exception
+ * affects every professional, but a professional only gets their own.
  */
-export function affectedAppointments(block: Pick<ScheduleBlock, "professionalId" | "startsAt" | "endsAt">) {
-  return db.appointment.findMany({
-    where: {
-      status: { not: "cancelled" },
-      ...(block.professionalId === null ? {} : { professionalId: block.professionalId }),
-      startsAt: { lt: block.endsAt },
-      endsAt: { gt: block.startsAt },
-    },
+function affectedWhere(block: Pick<ScheduleBlock, "professionalId" | "startsAt" | "endsAt">, actor: Actor): Prisma.AppointmentWhereInput {
+  return {
+    status: { not: "cancelled" },
+    ...(block.professionalId === null ? {} : { professionalId: block.professionalId }),
+    startsAt: { lt: block.endsAt },
+    endsAt: { gt: block.startsAt },
+    AND: [visibleToActor(actor)],
+  };
+}
+
+export async function affectedAppointments(block: Pick<ScheduleBlock, "professionalId" | "startsAt" | "endsAt">, actor: Actor) {
+  const appointments = await db.appointment.findMany({
+    where: affectedWhere(block, actor),
     include: {
       customer: { select: { id: true, name: true, phone: true } },
       professional: { select: { id: true, user: { select: { name: true } } } },
+      services: { include: { service: { select: { id: true, name: true } } } },
     },
     orderBy: { startsAt: "asc" },
   });
+  // Same flat services shape as /api/appointments.
+  return appointments.map(({ services, ...a }) => ({ ...a, services: services.map((s) => ({ id: s.service.id, name: s.service.name })) }));
 }
 
 async function findOr404(id: number) {
@@ -146,7 +156,10 @@ const index = apiRoute(async ({ request, user }) => {
   if (query.to) filters.push({ startsAt: { lt: parseDateTimeInput(query.to, timeZone) } });
 
   const blocks = await db.scheduleBlock.findMany({ where: { AND: filters }, include, orderBy: { startsAt: "asc" } });
-  return blocks.map((b) => presentBlock(b, timeZone));
+  // How many appointments of each still need action (only the ones the actor may see).
+  return Promise.all(
+    blocks.map(async (b) => ({ ...presentBlock(b, timeZone), affectedCount: await db.appointment.count({ where: affectedWhere(b, user) }) })),
+  );
 });
 
 // POST /api/schedule-blocks — responds with the appointments that now need action.
@@ -163,14 +176,14 @@ const store = apiRoute(async ({ request, user }) => {
     data: { tenantId: requireTenantId(), professionalId, ...range, reason: input.reason ?? null },
     include,
   });
-  return created({ ...presentBlock(block, timeZone), affectedAppointments: await affectedAppointments(block) });
+  return created({ ...presentBlock(block, timeZone), affectedAppointments: await affectedAppointments(block, user) });
 });
 
 // GET /api/schedule-blocks/[id]
 const show = apiRoute<{ id: string }>(async ({ params, user }) => {
   const block = await findOr404(parseId(params.id));
   authorize(user, "scheduleBlock", "view", block);
-  return { ...presentBlock(block, timeZoneOf(user)), affectedAppointments: await affectedAppointments(block) };
+  return { ...presentBlock(block, timeZoneOf(user)), affectedAppointments: await affectedAppointments(block, user) };
 });
 
 // PUT/PATCH /api/schedule-blocks/[id]
@@ -189,7 +202,7 @@ const update = apiRoute<{ id: string }>(async ({ request, params, user }) => {
     data: { professionalId, ...resolveRange(input, timeZone), reason: input.reason ?? null },
     include,
   });
-  return { ...presentBlock(block, timeZone), affectedAppointments: await affectedAppointments(block) };
+  return { ...presentBlock(block, timeZone), affectedAppointments: await affectedAppointments(block, user) };
 });
 
 // DELETE /api/schedule-blocks/[id]

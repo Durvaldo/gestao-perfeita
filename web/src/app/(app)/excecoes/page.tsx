@@ -15,6 +15,7 @@ export default async function Page() {
       ownProfessionalId={user.role === "professional" ? (user.professional?.id ?? null) : null}
       timeZone={timeZone}
       today={zonedParts(new Date(), timeZone).date}
+      barbershop={user.tenant?.name ?? ""}
     />
   );
 }

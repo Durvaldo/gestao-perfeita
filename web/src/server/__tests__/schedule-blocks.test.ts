@@ -204,3 +204,50 @@ describe("the agenda respects schedule exceptions (SPEC-0004 RF-2)", () => {
     expect(cancelled.status).toBe(200);
   });
 });
+
+describe("resolving the appointments affected by an exception (SPEC-0004 RF-3, TASK-0032)", () => {
+  beforeEach(async () => {
+    await unscopedDb.appointment.deleteMany();
+    await unscopedDb.scheduleBlock.deleteMany();
+  });
+
+  const put = (appointment: { id: number; startsAt: string }, changes: Record<string, unknown>, cookie = admin) =>
+    call(appointmentRoutes.item.PUT, {
+      method: "PUT",
+      cookie,
+      params: { id: String(appointment.id) },
+      body: { customerId: customer, professionalId: carlosPro, startsAt: appointment.startsAt, serviceIds: [service], ...changes },
+    });
+
+  test("a professional only sees their own appointments in a whole-barbershop exception", async () => {
+    await book(carlosPro, "10:00");
+    await book(rafaelPro, "11:00");
+    const shop = await createBlock(wholeDay());
+
+    const asCarlos = await call(item.GET, { cookie: carlos, params: { id: String(shop.body.id) } });
+    expect(asCarlos.body.affectedAppointments.map((a: { professionalId: number }) => a.professionalId)).toEqual([carlosPro]);
+    expect((await call(collection.GET, { cookie: carlos })).body[0].affectedCount).toBe(1);
+    expect((await call(collection.GET, { cookie: admin })).body[0].affectedCount).toBe(2);
+  });
+
+  test("reschedule, transfer and cancel take the appointments out of the exception", async () => {
+    const [a, b, c] = [await book(carlosPro, "14:00"), await book(carlosPro, "14:30"), await book(carlosPro, "15:00")];
+    const block = await createBlock(period("14:00", "16:00", { professionalId: carlosPro, reason: "Atestado" }));
+    expect(block.body.affectedAppointments).toHaveLength(3);
+    expect(block.body.affectedAppointments[0].services).toEqual([expect.objectContaining({ id: service })]);
+
+    // Reschedule: same professional, another time (outside the exception).
+    expect((await put(a.body, { startsAt: `${DAY}T17:00` })).status).toBe(200);
+    // Transfer: same time, another professional who is free; a busy one is refused.
+    await book(rafaelPro, "15:00");
+    expect((await put(c.body, { professionalId: rafaelPro })).status).toBe(422);
+    const transferred = await put(b.body, { professionalId: rafaelPro });
+    expect(transferred.status).toBe(200);
+    expect(transferred.body.services[0].priceAtBooking).toBe(b.body.services[0].priceAtBooking);
+    // Cancel.
+    expect((await put(c.body, { status: "cancelled" })).status).toBe(200);
+
+    const after = await call(item.GET, { cookie: admin, params: { id: String(block.body.id) } });
+    expect(after.body.affectedAppointments).toEqual([]);
+  });
+});

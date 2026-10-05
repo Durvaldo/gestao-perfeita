@@ -112,6 +112,10 @@ export function AgendaCalendar({
       }),
     ]),
   );
+  // An appointment inside an exception must be rescheduled, transferred or cancelled (SPEC-0004 Q1).
+  const needsAction = (appointment: CalendarAppointment) =>
+    appointment.status !== "cancelled" &&
+    blocks.some((b) => new Date(appointment.startsAt) < new Date(b.endsAt) && new Date(appointment.endsAt) > new Date(b.startsAt));
   const isBlocked = (dateKey: string, minute: number) =>
     (blocksByDay.get(dateKey) ?? []).some((b) => minute < b.fullEnd && minute + SLOT_MINUTES > b.fullStart);
   const isWorking = (dateKey: string, minute: number) =>
@@ -178,9 +182,15 @@ export function AgendaCalendar({
                 key={appointment.id}
                 type="button"
                 onClick={() => onSelectAppointment(appointment)}
-                className={cn("absolute inset-x-1 overflow-hidden rounded-md border-s-4 px-1.5 py-0.5 text-start text-xs shadow-sm", STATUS_STYLES[appointment.status])}
+                aria-label={needsAction(appointment) ? `${minutesToTime(startMin)} ${appointment.customer.name} (precisa de ação)` : undefined}
+                className={cn(
+                  "absolute inset-x-1 overflow-hidden rounded-md border-s-4 px-1.5 py-0.5 text-start text-xs shadow-sm",
+                  STATUS_STYLES[appointment.status],
+                  needsAction(appointment) && "ring-2 ring-amber-500",
+                )}
                 style={{ top: (startMin - min) * PX_PER_MINUTE, height: Math.max(18, (endMin - startMin) * PX_PER_MINUTE - 2) }}
               >
+                {needsAction(appointment) ? <span className="me-1 rounded bg-amber-500 px-1 font-semibold text-white">!</span> : null}
                 <span className="font-medium">{minutesToTime(startMin)}</span> {appointment.customer.name}
                 <span className="block truncate opacity-80">{appointment.services.map((s) => s.name).join(", ")}</span>
               </button>
