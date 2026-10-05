@@ -265,6 +265,20 @@ test("a sick leave: the affected appointments are transferred or cancelled (SPEC
   await expect(page.getByRole("link", { name: "Avisar no WhatsApp" })).toHaveCount(2);
 });
 
+test("the barbershop's public site works without login (SPEC-0007)", async ({ page }) => {
+  await page.goto("/barbearia-centro");
+
+  await expect(page).toHaveTitle("Barbearia Centro");
+  await expect(page.getByRole("heading", { level: 1, name: "Barbearia Centro" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Serviços" })).toContainText("Corte");
+  await expect(page.getByRole("region", { name: "Equipe" })).toContainText("Carlos Souza");
+  const booking = page.getByRole("link", { name: "Agendar pelo WhatsApp" });
+  await expect(booking).toHaveAttribute("href", /^https:\/\/wa\.me\/5511900000001\?text=/);
+
+  await page.goto("/nao-existe");
+  await expect(page.getByText("Página não encontrada")).toBeVisible();
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");
