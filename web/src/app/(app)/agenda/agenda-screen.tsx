@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, ChevronLeft, ChevronRight, Receipt } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, Receipt, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { AppModal } from "@/components/app-modal";
@@ -21,6 +21,7 @@ import { useMessageTemplates, WhatsAppLink } from "@/components/whatsapp-link";
 import { googleCalendarUrl } from "@/lib/calendar-links";
 import { appointmentVariables, renderTemplate } from "@/lib/whatsapp";
 import { AgendaCalendar, type CalendarAppointment, type CalendarBlock, type CalendarWorkingHour } from "./agenda-calendar";
+import { CalendarFeedDialog } from "./calendar-feed-dialog";
 
 type Appointment = Omit<CalendarAppointment, "customer" | "services"> & {
   customerId: number;
@@ -82,6 +83,7 @@ export function AgendaScreen({
   }, [timeZone, appointments]);
   const [workingHours, setWorkingHours] = useState<CalendarWorkingHour[]>([]);
   const [blocks, setBlocks] = useState<CalendarBlock[]>([]);
+  const [feedOpen, setFeedOpen] = useState(false);
   const [version, setVersion] = useState(0);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -227,11 +229,23 @@ export function AgendaScreen({
         title="Agenda"
         description={isAdmin ? "Agenda dos barbeiros." : "Sua agenda."}
         action={
-          <Button onClick={() => openCreate()} disabled={!professionalId}>
-            <CalendarPlus className="size-4" />
-            Novo agendamento
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setFeedOpen(true)} disabled={!professionalId}>
+              <Smartphone className="size-4" />
+              Agenda no celular
+            </Button>
+            <Button onClick={() => openCreate()} disabled={!professionalId}>
+              <CalendarPlus className="size-4" />
+              Novo agendamento
+            </Button>
+          </div>
         }
+      />
+      <CalendarFeedDialog
+        professionalId={professionalId}
+        professionalName={selectedProfessional?.user.name ?? ""}
+        open={feedOpen}
+        onOpenChange={setFeedOpen}
       />
 
       <div className="flex flex-wrap items-center gap-2">

@@ -104,6 +104,11 @@ export const policies = {
   siteSettings: {
     update: isAdmin,
   },
+  // A professional's calendar feed link (SPEC-0006): the professional or the admin.
+  // Subject: { professionalId }.
+  calendarFeed: {
+    manage: adminOrOwner,
+  },
   financialEntry: {
     viewAny: isAdmin,
     view: isAdmin,

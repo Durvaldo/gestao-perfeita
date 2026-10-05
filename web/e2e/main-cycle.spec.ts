@@ -310,6 +310,25 @@ test("the admin customizes the site: logo, about, and turning it off (SPEC-0007)
   await expect(page.getByText("Página não encontrada")).toBeVisible();
 });
 
+test("a professional subscribes to their agenda on the phone (SPEC-0006)", async ({ page }) => {
+  await login(page, "carlos@barbearia-centro.com");
+  await page.goto("/agenda");
+  await page.getByRole("button", { name: "Agenda no celular" }).click();
+  await page.getByRole("button", { name: "Gerar link da agenda" }).click();
+
+  const link = page.getByRole("textbox", { name: "Link da agenda" });
+  await expect(link).toHaveValue(/\/api\/calendar\/[\w-]+\.ics$/);
+  const url = await link.inputValue();
+
+  // The feed itself, as a calendar app would fetch it (no session needed).
+  const feed = await page.context().request.get(url, { headers: { cookie: "" } });
+  expect(feed.status()).toBe(200);
+  expect(feed.headers()["content-type"]).toContain("text/calendar");
+  const ics = await feed.text();
+  expect(ics).toContain("BEGIN:VCALENDAR");
+  expect(ics).toContain("SUMMARY:João Pereira"); // booked for Carlos in the main cycle
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");

@@ -225,6 +225,8 @@ model Professional {
   userId                Int      @unique @map("user_id")
   defaultCommissionRate Decimal  @default(0) @map("default_commission_rate") @db.Decimal(5, 2)
   photoUrl              String?  @map("photo_url")
+  // Secret of the professional's calendar feed (/api/calendar/{token}.ics, SPEC-0006 RF-2b); null = no feed.
+  calendarToken         String?  @unique @map("calendar_token")
   active                Boolean  @default(true)
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
