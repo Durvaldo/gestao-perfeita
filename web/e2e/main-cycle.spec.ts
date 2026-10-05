@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { type Cookie, expect, type Page, test } from "@playwright/test";
 import { addDays, dayMonthLabel, startOfWeek } from "../src/lib/calendar";
 import { zonedParts } from "../src/lib/timezone";
 
@@ -10,12 +10,25 @@ import { zonedParts } from "../src/lib/timezone";
 const PASSWORD = "senha123"; // seed dev password (prisma/seed-data.ts)
 const money = (value: string) => new RegExp(`R\\$\\s${value.replace(".", "\\.")}`);
 
+// Session cookies per user. The sign-in is rate limited in production builds
+// (5 per minute, src/lib/auth.ts), so each user signs in through the real form
+// once and later tests reuse the session (single worker, so this cache is shared).
+const sessions = new Map<string, Cookie[]>();
+
 async function login(page: Page, email: string) {
+  const cookies = sessions.get(email);
+  if (cookies) {
+    await page.context().addCookies(cookies);
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/$/);
+    return;
+  }
   await page.goto("/login");
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL(/\/$/);
+  sessions.set(email, await page.context().cookies());
 }
 
 async function pick(page: Page, trigger: string, option: string | RegExp) {
@@ -110,6 +123,24 @@ test("a professional does not see the catalog screens nor their colleagues (SPEC
   await expect(page.getByRole("heading", { name: "Meus horários" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "Carlos Souza", exact: true })).toHaveCount(1);
   await expect(page.getByRole("cell", { name: "Rafael Lima", exact: true })).toHaveCount(0);
+});
+
+test("past slots of the agenda can't be booked (SPEC-0003)", async ({ page }) => {
+  await login(page, "admin@barbearia-centro.com");
+  const today = zonedParts(new Date(), "America/Sao_Paulo").date;
+  const lastMonday = addDays(startOfWeek(today), -7);
+  const nextMonday = addDays(startOfWeek(today), 7);
+
+  await page.goto("/agenda");
+  await page.getByRole("combobox", { name: "Barbeiro" }).click();
+  await page.getByRole("option", { name: "Carlos Souza" }).click();
+
+  await page.getByRole("button", { name: "Período anterior" }).click();
+  await expect(page.getByRole("button", { name: `${dayMonthLabel(lastMonday)} 10:00` })).toBeDisabled();
+
+  await page.getByRole("button", { name: "Próximo período" }).click();
+  await page.getByRole("button", { name: "Próximo período" }).click();
+  await expect(page.getByRole("button", { name: `${dayMonthLabel(nextMonday)} 10:00` })).toBeEnabled();
 });
 
 test("product stock mode: 'Registrar quantidade' or 'Estoque livre' (SPEC-0002)", async ({ page }) => {

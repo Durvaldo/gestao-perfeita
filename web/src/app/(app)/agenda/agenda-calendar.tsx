@@ -1,6 +1,6 @@
 "use client";
 
-import { dayMonthLabel, minutesToTime, timeToMinutes, weekdayIndex, weekdayShortLabel } from "@/lib/calendar";
+import { dayMonthLabel, isPastSlot, type LocalNow, minutesToTime, timeToMinutes, weekdayIndex, weekdayShortLabel } from "@/lib/calendar";
 import { zonedParts } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,7 @@ type Placed = { appointment: CalendarAppointment; startMin: number; endMin: numb
 export function AgendaCalendar({
   days,
   today,
+  now,
   timeZone,
   appointments,
   workingHours,
@@ -41,6 +42,8 @@ export function AgendaCalendar({
 }: {
   days: string[];
   today: string;
+  /** Current time in the barbershop: slots before it can't be booked (SPEC-0003). */
+  now: LocalNow;
   timeZone: string;
   appointments: CalendarAppointment[];
   workingHours: CalendarWorkingHour[];
@@ -117,21 +120,25 @@ export function AgendaCalendar({
 
         {days.map((day) => (
           <div key={day} className="relative border-s" style={{ height }}>
-            {slots.map((m) => (
-              <button
-                key={m}
-                type="button"
-                aria-label={`${dayMonthLabel(day)} ${minutesToTime(m)}`}
-                disabled={!onSelectSlot}
-                onClick={() => onSelectSlot?.(day, m)}
-                className={cn(
-                  "absolute inset-x-0 border-t border-dashed border-border/70 transition-colors",
-                  isWorking(day, m) ? "bg-background hover:bg-primary/5" : "bg-muted/60",
-                  !onSelectSlot && "cursor-default",
-                )}
-                style={{ top: (m - min) * PX_PER_MINUTE, height: SLOT_MINUTES * PX_PER_MINUTE }}
-              />
-            ))}
+            {slots.map((m) => {
+              const past = isPastSlot(day, m, now);
+              const selectable = Boolean(onSelectSlot) && !past;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  aria-label={`${dayMonthLabel(day)} ${minutesToTime(m)}`}
+                  disabled={!selectable}
+                  onClick={() => onSelectSlot?.(day, m)}
+                  className={cn(
+                    "absolute inset-x-0 border-t border-dashed border-border/70 transition-colors",
+                    isWorking(day, m) && !past ? "bg-background hover:bg-primary/5" : "bg-muted/60",
+                    !selectable && "cursor-default",
+                  )}
+                  style={{ top: (m - min) * PX_PER_MINUTE, height: SLOT_MINUTES * PX_PER_MINUTE }}
+                />
+              );
+            })}
             {(byDay.get(day) ?? []).map(({ appointment, startMin, endMin }) => (
               <button
                 key={appointment.id}

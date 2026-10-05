@@ -44,3 +44,14 @@ export function minutesToTime(minutes: number): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
 }
+
+/** A point in the barbershop's local time: calendar day + minutes since 00:00. */
+export type LocalNow = { date: string; minutes: number };
+
+/**
+ * Whether a calendar slot starts before `now` (both in the barbershop's local
+ * time): past slots can't be booked (SPEC-0003). "YYYY-MM-DD" keys compare as strings.
+ */
+export function isPastSlot(dateKey: string, minutes: number, now: LocalNow): boolean {
+  return dateKey < now.date || (dateKey === now.date && minutes < now.minutes);
+}

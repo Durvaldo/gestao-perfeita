@@ -310,3 +310,76 @@ describe("appointments API", () => {
     expect(await unscopedDb.appointment.count({ where: { professionalId: pro } })).toBe(1);
   });
 });
+
+// SPEC-0003: no retroactive bookings. 2020-01-09 was a Thursday, like THURSDAY.
+const PAST_THURSDAY = "2020-01-09";
+
+describe("no retroactive bookings (SPEC-0003)", () => {
+  beforeAll(async () => {
+    await truncateAll();
+    await seed(unscopedDb);
+    tenantA = (await unscopedDb.tenant.findFirstOrThrow({ orderBy: { id: "asc" } })).id;
+    customer = (await unscopedDb.customer.findFirstOrThrow({ where: { tenantId: tenantA } })).id;
+    admin = await loginCookie("admin@barbearia-centro.com");
+    carlos = await loginCookie("carlos@barbearia-centro.com");
+  });
+  beforeEach(async () => {
+    await unscopedDb.appointment.deleteMany();
+  });
+  afterAll(() => unscopedDb.$disconnect());
+
+  const pastAppointment = async (professionalId: number, serviceId: number) => {
+    const adminUser = await unscopedDb.user.findUniqueOrThrow({ where: { email: "admin@barbearia-centro.com" } });
+    // 10:00 in São Paulo = 13:00 UTC, 30 minutes.
+    return unscopedDb.appointment.create({
+      data: {
+        tenantId: tenantA,
+        customerId: customer,
+        professionalId,
+        startsAt: new Date(`${PAST_THURSDAY}T13:00:00Z`),
+        endsAt: new Date(`${PAST_THURSDAY}T13:30:00Z`),
+        createdByUserId: adminUser.id,
+        services: { create: { serviceId, priceAtBooking: "50.00" } },
+      },
+    });
+  };
+
+  test("booking in the past is refused, for the admin and for the professional", async () => {
+    const pro = await professionalWith([["09:00", "18:00"]]);
+    const service = await serviceWith(30);
+
+    const res = await book(pro, `${PAST_THURSDAY} 10:00:00`, [service]);
+    expect(res.status).toBe(422);
+    expect(res.body.errors).toEqual({ startsAt: ["Não é possível agendar em um horário que já passou."] });
+
+    const carlosId = (await unscopedDb.professional.findFirstOrThrow({ where: { user: { email: "carlos@barbearia-centro.com" } } })).id;
+    expect((await book(carlosId, `${PAST_THURSDAY} 10:00:00`, [service], carlos)).status).toBe(422);
+    expect(await unscopedDb.appointment.count()).toBe(0);
+  });
+
+  test("moving an appointment to the past is refused", async () => {
+    const pro = await professionalWith([["09:00", "18:00"]]);
+    const service = await serviceWith(30);
+    const created = await book(pro, `${THURSDAY} 10:00:00`, [service]);
+
+    const res = await call(item.PUT, {
+      method: "PUT",
+      cookie: admin,
+      params: { id: String(created.body.id) },
+      body: { customerId: customer, professionalId: pro, startsAt: `${PAST_THURSDAY} 10:00:00`, serviceIds: [service] },
+    });
+    expect(res.status).toBe(422);
+    expect(res.body.errors.startsAt).toEqual(["Não é possível agendar em um horário que já passou."]);
+  });
+
+  test("a past appointment can still be completed or cancelled", async () => {
+    const pro = await professionalWith([["09:00", "18:00"]]);
+    const service = await serviceWith(30);
+    const past = await pastAppointment(pro, service);
+    const body = { customerId: customer, professionalId: pro, startsAt: `${PAST_THURSDAY} 10:00:00`, serviceIds: [service] };
+
+    const completed = await call(item.PUT, { method: "PUT", cookie: admin, params: { id: String(past.id) }, body: { ...body, status: "completed" } });
+    expect(completed.status).toBe(200);
+    expect(completed.body.status).toBe("completed");
+  });
+});

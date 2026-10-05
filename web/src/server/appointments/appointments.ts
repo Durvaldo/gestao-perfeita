@@ -13,7 +13,7 @@ import { pageFromRequest, paginate } from "@/server/http/pagination";
 import { assertReferencesInTenant } from "@/server/http/references";
 import { apiRoute, created, noContent } from "@/server/http/route";
 import { parseBody, parseQuery } from "@/server/http/validation";
-import { hasConflict, isWithinWorkingHours, lockProfessionalSchedule } from "./rules";
+import { hasConflict, isWithinWorkingHours, lockProfessionalSchedule, startsInThePast } from "./rules";
 
 // Legacy: AgendamentoRequest + AgendamentoController + Agendamento model.
 
@@ -76,12 +76,14 @@ async function findOr404(id: number) {
  * references in tenant (422), active professional (422), end = start + sum of
  * service durations, and working hours (422). `checkSchedule` is false for a
  * status-only update (legacy: an old appointment outside the current working
- * hours can still be confirmed/cancelled).
+ * hours can still be confirmed/cancelled). `checkPast` refuses a start before now
+ * (SPEC-0003): on create, and on update only when the start time changes, so a
+ * past appointment can still be completed or cancelled.
  */
 async function resolveSchedule(
   input: z.output<typeof appointmentSchema>,
   timeZone: string,
-  options: { checkSchedule: (start: Date, end: Date) => boolean },
+  options: { checkSchedule: (start: Date, end: Date) => boolean; checkPast: (start: Date) => boolean },
 ) {
   await assertReferencesInTenant(
     {
@@ -96,6 +98,10 @@ async function resolveSchedule(
   const start = parseDateTimeInput(input.startsAt, timeZone);
   const totalMinutes = services.reduce((sum, s) => sum + s.durationMinutes, 0);
   const end = new Date(start.getTime() + totalMinutes * 60_000);
+
+  if (options.checkPast(start) && startsInThePast(start)) {
+    throw ValidationError.field("startsAt", "Não é possível agendar em um horário que já passou.");
+  }
 
   if (options.checkSchedule(start, end)) {
     const professional = await db.professional.findUniqueOrThrow({ where: { id: input.professionalId } });
@@ -147,7 +153,10 @@ const index = apiRoute(async ({ request, user }) => {
 const store = apiRoute(async ({ request, user }) => {
   authorize(user, "appointment", "create");
   const input = await parseBody(request, appointmentSchema, appointmentLabels);
-  const { start, end, services } = await resolveSchedule(input, timeZoneOf(user), { checkSchedule: () => true });
+  const { start, end, services } = await resolveSchedule(input, timeZoneOf(user), {
+    checkSchedule: () => true,
+    checkPast: () => true,
+  });
 
   const appointment = await db.$transaction(async (tx) => {
     await lockProfessionalSchedule(tx, input.professionalId);
@@ -191,6 +200,7 @@ const update = apiRoute<{ id: string }>(async ({ request, params, user }) => {
       current.professionalId !== input.professionalId ||
       current.startsAt.getTime() !== s.getTime() ||
       current.endsAt.getTime() !== e.getTime(),
+    checkPast: (s) => current.startsAt.getTime() !== s.getTime(),
   });
 
   const keptIds = new Set(current.services.map((s) => s.serviceId));

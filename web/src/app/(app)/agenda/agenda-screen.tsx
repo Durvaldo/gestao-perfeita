@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, apiAll } from "@/lib/api-client";
-import { addDays, dayMonthLabel, minutesToTime, startOfWeek } from "@/lib/calendar";
+import { addDays, dayMonthLabel, minutesToTime, startOfWeek, timeToMinutes } from "@/lib/calendar";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { zonedParts } from "@/lib/timezone";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -67,6 +67,13 @@ export function AgendaScreen({
   const [customers, setCustomers] = useState<Option[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  // Current barbershop time, refreshed whenever the appointments reload: past slots
+  // can't be booked (SPEC-0003; the API is the real check).
+  const now = useMemo(() => {
+    const parts = zonedParts(new Date(), timeZone);
+    return { date: parts.date, minutes: timeToMinutes(parts.time), time: parts.time.slice(0, 5) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recompute the clock on each reload
+  }, [timeZone, appointments]);
   const [workingHours, setWorkingHours] = useState<CalendarWorkingHour[]>([]);
   const [version, setVersion] = useState(0);
 
@@ -257,6 +264,7 @@ export function AgendaScreen({
           <AgendaCalendar
             days={days}
             today={today}
+            now={now}
             timeZone={timeZone}
             appointments={appointments}
             workingHours={workingHours}
@@ -320,7 +328,14 @@ export function AgendaScreen({
             </FormField>
           ) : null}
           <FormField id="startsAt" label="Data e hora" errors={errors.startsAt} className={isAdmin ? "" : "sm:col-span-2"}>
-            <Input id="startsAt" type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
+            <Input
+              id="startsAt"
+              type="datetime-local"
+              // No booking in the past (SPEC-0003).
+              min={`${now.date}T${now.time}`}
+              value={form.startsAt}
+              onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+            />
           </FormField>
           <FormField id="serviceIds" label="Serviços" errors={errors.serviceIds} className="sm:col-span-2">
             <div className="grid gap-2 sm:grid-cols-2" id="serviceIds">

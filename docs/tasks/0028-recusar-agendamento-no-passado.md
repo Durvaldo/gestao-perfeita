@@ -1,5 +1,5 @@
 ---
-status: em-andamento
+status: concluida
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
@@ -25,10 +25,10 @@ A Q1 da SPEC (tolerância para registro tardio) segue a recomendação: sem tole
 
 ## Critérios de conclusão
 
-- [ ] Regra em `web/src/server/appointments/rules.ts`, com o "agora" injetável para teste.
-- [ ] Testes de API: criar no passado → 422; remarcar para o passado → 422; concluir um agendamento de ontem → 200.
-- [ ] Agenda: horários passados não clicáveis e `min` no campo de data/hora.
-- [ ] Os testes e o seed do E2E que criam agendamentos usam datas futuras; `npm test`, `npm run lint` e `npm run test:e2e` passando.
+- [x] Regra em `web/src/server/appointments/rules.ts`, com o "agora" injetável para teste.
+- [x] Testes de API: criar no passado → 422; remarcar para o passado → 422; concluir um agendamento de ontem → 200.
+- [x] Agenda: horários passados não clicáveis e `min` no campo de data/hora.
+- [x] Os testes e o seed do E2E que criam agendamentos usam datas futuras; `npm test`, `npm run lint` e `npm run test:e2e` passando.
 
 ## Referências
 
@@ -36,3 +36,4 @@ A Q1 da SPEC (tolerância para registro tardio) segue a recomendação: sem tole
 - [ADR-0009](../decisions/0009-agendamento-fuso-por-tenant-e-regras.md)
 
 ## Notas de progresso
+- 2026-10-04 — Implementado. `startsInThePast(start, now)` em `rules.ts` (o "agora" é um parâmetro, com teste unitário). `resolveSchedule` ganhou `checkPast`: sempre na criação; na edição, só quando o início muda. Assim, concluir ou cancelar um agendamento passado continua funcionando. Mensagem: "Não é possível agendar em um horário que já passou." (422 em `startsAt`). Na agenda, `isPastSlot` (em `src/lib/calendar.ts`, com testes) desabilita os horários passados, e o `datetime-local` ganhou `min` (o formulário só cria, nunca edita, então o `min` não atrapalha). Os testes de API e o seed do E2E já usavam datas futuras. Testes novos: 3 de API, unitários de `startsInThePast` e de `isPastSlot`, e um E2E (horário da semana passada desabilitado, da próxima habilitado). **Ajuste no E2E:** com os testes novos, o E2E passou de 5 logins, o limite do build de produção (5 por minuto), e o teste de senha errada recebia 429. O helper `login()` agora entra pelo formulário só na primeira vez de cada usuário e reaproveita os cookies depois. O limite não foi afrouxado. Verificado: `npm test` (217), `npm run lint`, `npx tsc --noEmit` e `npm run test:e2e` (6).

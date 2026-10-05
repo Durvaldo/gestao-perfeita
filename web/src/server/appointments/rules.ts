@@ -9,6 +9,15 @@ type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 const timeOf = (value: Date) => value.toISOString().slice(11, 19);
 
 /**
+ * Whether a booking would start before now (SPEC-0003: no retroactive bookings,
+ * for every role). `now` is a parameter so tests can pin the clock. Instants are
+ * absolute (UTC), so no time zone is involved.
+ */
+export function startsInThePast(start: Date, now: Date = new Date()): boolean {
+  return start.getTime() < now.getTime();
+}
+
+/**
  * Whether [start, end) fits entirely inside ONE working period of the professional
  * for that weekday (legacy Agendamento::dentroDoExpediente): it cannot span the
  * lunch gap nor midnight, and a day without working hours accepts nothing.

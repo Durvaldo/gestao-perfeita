@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { addDays, dayMonthLabel, minutesToTime, startOfWeek, timeToMinutes, weekdayIndex, weekdayShortLabel } from "@/lib/calendar";
+import { addDays, dayMonthLabel, isPastSlot, minutesToTime, startOfWeek, timeToMinutes, weekdayIndex, weekdayShortLabel } from "@/lib/calendar";
 
 describe("calendar helpers", () => {
   test("day arithmetic across months and years", () => {
@@ -21,5 +21,19 @@ describe("calendar helpers", () => {
     expect(timeToMinutes("09:30")).toBe(570);
     expect(timeToMinutes("18:00:00")).toBe(1080);
     expect(minutesToTime(570)).toBe("09:30");
+  });
+});
+
+describe("isPastSlot (SPEC-0003)", () => {
+  const now = { date: "2030-01-10", minutes: 10 * 60 + 5 }; // 10:05
+
+  test("earlier days and earlier slots of today are past", () => {
+    expect(isPastSlot("2030-01-09", 18 * 60, now)).toBe(true);
+    expect(isPastSlot("2030-01-10", 10 * 60, now)).toBe(true);
+  });
+
+  test("later slots of today and later days are bookable", () => {
+    expect(isPastSlot("2030-01-10", 10 * 60 + 30, now)).toBe(false);
+    expect(isPastSlot("2030-01-11", 9 * 60, now)).toBe(false);
   });
 });
