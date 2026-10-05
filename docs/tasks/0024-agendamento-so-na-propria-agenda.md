@@ -1,5 +1,5 @@
 ---
-status: em-andamento
+status: concluida
 modulo: web
 owner: Durvaldo
 criado-em: 2026-10-04
@@ -20,10 +20,10 @@ Resolver a questão Q1 da [SPEC-0001](../specs/SPEC-0001.md). Hoje o profissiona
 
 ## Critérios de conclusão
 
-- [ ] Decisão registrada na SPEC-0001 (Q1 vira requisito, ou é descartada; neste caso a task é `cancelada`).
-- [ ] `POST`/`PUT /api/appointments` feito por profissional: o próprio → aceito; o de um colega → recusado (pt-BR).
-- [ ] Formulário da agenda: para o profissional, o campo "Barbeiro" fica oculto ou fixo.
-- [ ] Matriz de policies e notas nas ADRs 0006 e 0009 atualizadas; testes; `npm test` e `npm run lint` passando.
+- [x] Decisão registrada na SPEC-0001 (Q1 vira requisito, ou é descartada; neste caso a task é `cancelada`).
+- [x] `POST`/`PUT /api/appointments` feito por profissional: o próprio → aceito; o de um colega → recusado (pt-BR).
+- [x] Formulário da agenda: para o profissional, o campo "Barbeiro" fica oculto ou fixo.
+- [x] Matriz de policies e notas nas ADRs 0006 e 0009 atualizadas; testes; `npm test` e `npm run lint` passando.
 
 ## Referências
 
@@ -34,3 +34,4 @@ Resolver a questão Q1 da [SPEC-0001](../specs/SPEC-0001.md). Hoje o profissiona
 
 - 2026-10-04 — Criada bloqueada: depende de uma decisão de produto (Q1 da SPEC-0001) ainda não tomada.
 - 2026-10-04 — Desbloqueada: o responsável respondeu às questões pendentes (ver "Decisões do responsável" na SPEC de origem).
+- 2026-10-04 — Implementado (decisão Q1 = A, registrada na SPEC-0001). Ação nova `appointment.assignTo` (admin ou dono), checada no `POST` e no `PUT`: o profissional não agenda para um colega nem move um agendamento para a agenda dele (403); o admin, sim. A tela já não mostrava o campo "Barbeiro" ao profissional e enviava o id dele, então não precisou de mudança. O teste de "paridade com o legado", que afirmava o contrário, foi substituído pelo teste da regra nova; a matriz de policies também foi atualizada. Notas nas ADR-0006 e ADR-0009. Verificado: `npm test` (227), `npm run lint`, `npx tsc --noEmit` e `npm run test:e2e` (7).

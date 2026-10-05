@@ -44,4 +44,4 @@ Dois pontos de "paridade mantida de propósito" foram superados pela [SPEC-0001]
 - O profissional **não** cria mais comanda para um colega: a ação nova `order.createFor` (admin ou dono) é checada com o profissional da comanda, tanto na avulsa quanto na aberta a partir de um agendamento (`TASK-0023`).
 - `professional.view` e `workingHour.viewAny`/`view` passaram a ser admin ou dono: o profissional só vê o próprio registro e os próprios horários, e a listagem de profissionais usa `visibleProfessionals(actor)` (`TASK-0022`).
 
-A criação de **agendamento** para um colega continua permitida até a decisão da Q1 da SPEC-0001 (`TASK-0024`).
+- O profissional também **não** agenda mais para um colega nem move um agendamento para a agenda dele: a ação nova `appointment.assignTo` (admin ou dono) é checada no `POST` e no `PUT` (`TASK-0024`, Q1 da SPEC-0001).

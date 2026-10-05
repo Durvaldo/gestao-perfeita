@@ -240,10 +240,26 @@ describe("appointments API", () => {
     expect((await call(item.DELETE, { method: "DELETE", cookie: admin, params: { id: String(own.body.id) } })).status).toBe(204);
   });
 
-  test("legacy parity: a professional may book for a colleague (but not see it afterwards)", async () => {
-    const res = await book(rafaelPro, `${THURSDAY}T15:00`, [await serviceWith(30)], carlos);
-    expect(res.status).toBe(201);
-    expect((await call(item.GET, { cookie: carlos, params: { id: String(res.body.id) } })).status).toBe(403);
+  test("a professional books and moves appointments only on their own schedule (SPEC-0001)", async () => {
+    const service = await serviceWith(30);
+
+    // Booking for a colleague is refused; nothing is created.
+    expect((await book(rafaelPro, `${THURSDAY}T15:00`, [service], carlos)).status).toBe(403);
+    expect(await unscopedDb.appointment.count({ where: { professionalId: rafaelPro } })).toBe(0);
+
+    // Their own booking works, but it can't be moved to a colleague.
+    const own = await book(carlosPro, `${THURSDAY}T15:00`, [service], carlos);
+    expect(own.status).toBe(201);
+    const moved = await call(item.PUT, {
+      method: "PUT",
+      cookie: carlos,
+      params: { id: String(own.body.id) },
+      body: { customerId: customer, professionalId: rafaelPro, startsAt: `${THURSDAY}T15:00`, serviceIds: [service] },
+    });
+    expect(moved.status).toBe(403);
+
+    // The admin still books for anyone.
+    expect((await book(rafaelPro, `${THURSDAY}T16:00`, [service])).status).toBe(201);
   });
 
   test("with a period, returns the flat list of overlapping appointments", async () => {

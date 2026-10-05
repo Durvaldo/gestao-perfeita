@@ -153,6 +153,7 @@ const index = apiRoute(async ({ request, user }) => {
 const store = apiRoute(async ({ request, user }) => {
   authorize(user, "appointment", "create");
   const input = await parseBody(request, appointmentSchema, appointmentLabels);
+  authorize(user, "appointment", "assignTo", { professionalId: input.professionalId });
   const { start, end, services } = await resolveSchedule(input, timeZoneOf(user), {
     checkSchedule: () => true,
     checkPast: () => true,
@@ -192,6 +193,8 @@ const update = apiRoute<{ id: string }>(async ({ request, params, user }) => {
   const current = await findOr404(parseId(params.id));
   authorize(user, "appointment", "update", current);
   const input = await parseBody(request, appointmentSchema, appointmentLabels);
+  // Moving it to a colleague's schedule is the same as booking for them (SPEC-0001).
+  authorize(user, "appointment", "assignTo", { professionalId: input.professionalId });
 
   // Working hours and active professional are only rechecked when the professional
   // or the time range changes. Conflicts are always rechecked.

@@ -56,8 +56,11 @@ export const policies = {
   appointment: {
     viewAny: isStaff,
     view: adminOrOwner,
-    // Legacy parity: a professional may book for any professional of the tenant.
     create: isStaff,
+    // SPEC-0001 (Q1): a professional books and moves appointments only on their
+    // own schedule (the legacy app allowed any colleague). Subject: the
+    // professional the appointment is assigned to.
+    assignTo: adminOrOwner,
     update: adminOrOwner,
     delete: isAdmin,
   },

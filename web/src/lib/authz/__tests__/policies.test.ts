@@ -22,7 +22,7 @@ const matrix: Record<string, Record<string, Expectation>> = {
   // SPEC-0001: a professional sees only their own record and schedule.
   professional: { viewAny: "staff", view: "own", create: "admin", update: "admin", delete: "admin" },
   workingHour: { viewAny: "own", view: "own", create: "own", update: "own", delete: "own" },
-  appointment: { viewAny: "staff", view: "own", create: "staff", update: "own", delete: "admin" },
+  appointment: { viewAny: "staff", view: "own", create: "staff", assignTo: "own", update: "own", delete: "admin" },
   order: { viewAny: "staff", view: "own", create: "staff", createFor: "own", update: "own" },
   financialEntry: { viewAny: "admin", view: "admin", create: "admin", update: "admin", delete: "admin" },
   dashboard: { view: "staff" },

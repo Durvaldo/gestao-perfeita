@@ -49,3 +49,8 @@ O responsável decidiu em 2026-10-03: **fuso por barbearia** e **recusar agendam
 - As telas (`TASK-0013`) devem exibir os horários no fuso da barbearia (`timeZone: user.tenant.timezone` no `Intl`), e não no fuso do navegador. Para enviar, um `datetime-local` "cru" é o formato natural.
 - Relatórios por período (`TASK-0016`/`0017`) devem montar os limites de "dia" e "mês" no fuso da barbearia (`parseDateTimeInput` / `zonedToUtc`).
 - Ainda não há tela para editar `tenants.timezone`; o padrão atende o seed. Entra junto com as configurações da barbearia.
+
+## Atualização — 2026-10-04 (SPEC-0001 e SPEC-0003)
+
+- O item "o profissional pode criar agendamento para um colega" foi superado pela [SPEC-0001](../specs/SPEC-0001.md) (Q1, `TASK-0024`): o profissional cria e remarca só na própria agenda (`appointment.assignTo`); um colega → 403.
+- Nova regra da [SPEC-0003](../specs/SPEC-0003.md) (`TASK-0028`): não se cria nem se move o início de um agendamento para antes de agora (`startsInThePast`); a atualização só de status continua livre.
