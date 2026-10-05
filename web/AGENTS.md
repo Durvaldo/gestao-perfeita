@@ -164,7 +164,7 @@ Os e-mails de super_admin e admin são os mesmos do legado. Os profissionais sã
 
 [ADR-0005](../docs/decisions/0005-isolamento-por-tenant-prisma-extension.md).
 
-- **Use sempre `db`** em código que atende um tenant. Operações em modelos com tenant (`Customer`, `Professional`, `Service`, `Product`, `ScheduleBlock`, `Appointment`, `Order`, `FinancialEntry` e os indiretos `WorkingHour`, `ProfessionalService`, `AppointmentService`, `OrderItem`) são filtradas pelo tenant do contexto. **Sem contexto, lançam `TenantContextMissingError`** (falha fechada).
+- **Use sempre `db`** em código que atende um tenant. Operações em modelos com tenant (`Customer`, `Professional`, `Service`, `Product`, `ScheduleBlock`, `Appointment`, `Order`, `FinancialEntry`, `TenantSetting` e os indiretos `WorkingHour`, `ProfessionalService`, `AppointmentService`, `OrderItem`) são filtradas pelo tenant do contexto. **Sem contexto, lançam `TenantContextMissingError`** (falha fechada).
 - O contexto vem de `withRequestTenant(fn)` (resolve pelo usuário logado, ou por `{ slug }` em rotas públicas) ou de `runWithTenant(tenantId, fn)`. Rode as queries **dentro** do callback.
 - `unscopedDb` só para: adapter do Better Auth, seed, setup de testes, features de super_admin. Importá-lo em código de requisição de tenant é erro de revisão.
 - Registro de outro tenant buscado por ID → `null` ou erro "não encontrado" no `update`/`delete`. Responda **404**, como no legado.
@@ -223,6 +223,7 @@ try {
 | `/api/financial-report` | GET | só admin; `?from=&to=` (`YYYY-MM-DD`, padrão: mês corrente no fuso da barbearia) → `{ period, totalIncome, totalExpenses, balance, commissionsByProfessional[{ professionalId, professionalName, commission }] }` (valores como `"0.00"`) |
 | `/api/dashboard` | GET | admin (a barbearia inteira) e profissional (só os dados dele, SPEC-0001) → `{ bestSellingProducts, bestSellingServices, professionalRanking, topCustomers, upcomingBirthdays }`; faturamento só de comandas pagas; `topCustomers` conta atendimentos: agendamentos concluídos + comandas pagas não contadas por um agendamento concluído (SPEC-0003) |
 | `/api/appointments`, `/api/appointments/[id]` | GET, POST / GET, PUT, PATCH, DELETE | `?from=&to=` → lista completa por sobreposição (sem paginação); `?professionalId=`; `startsAt` sem offset = fuso da barbearia; o fim vem das durações; só o admin exclui |
+| `/api/message-templates` | GET, PUT | modelos de mensagem de WhatsApp da barbearia ([SPEC-0008](../docs/specs/SPEC-0008.md), [ADR-0013](../docs/decisions/0013-configuracoes-por-tenant-chave-valor.md)): GET para a equipe (os botões usam), PUT só admin com os modelos a mudar; chave ausente = texto padrão (`src/lib/whatsapp.ts`) |
 | `/api/schedule-blocks`, `/api/schedule-blocks/[id]` | GET, POST / GET, PUT, PATCH, DELETE | exceções da agenda ([ADR-0012](../docs/decisions/0012-excecoes-da-agenda-representacao-e-checagem.md)): `{ professionalId | null, allDay, startDate/endDate | startsAt/endsAt, reason }`; `?from=&to=&professionalId=`; o profissional vê as dele e as da barbearia e gerencia só as dele; resposta com `affectedAppointments` |
 
 Leitura: admin e profissional, menos `/api/professionals` e os horários, em que o profissional só vê o que é dele (SPEC-0001). Escrita: só admin (exceto horários, que o próprio profissional também edita). Listas paginadas (`?page=`, 15 por página, mais recentes primeiro), menos a de horários, que vem completa e ordenada por dia.
@@ -286,6 +287,7 @@ Use `src/app/(app)/clientes/` como modelo para telas de lista + formulário:
 
 ## Telas de negócio
 
+- **WhatsApp, nível 1** ([SPEC-0008](../docs/specs/SPEC-0008.md)): `src/lib/whatsapp.ts` (modelos padrão, `renderTemplate`, `appointmentVariables`, `whatsappUrl` com o `55`) e `src/components/whatsapp-link.tsx` (`WhatsAppLink`, que some sem telefone válido, e `useMessageTemplates`). Botões em Clientes (conversa) e no detalhe do agendamento (confirmar e lembrar). Tela `/mensagens` (só admin) para editar os textos, com prévia.
 - **Exceções** (`(app)/excecoes/`, menu "Exceções" / "Minhas folgas" para o barbeiro): lista as exceções de hoje em diante, com formulário de dia inteiro ou período e sugestões de motivo; a lógica do formulário fica em `exception-form.ts`. Na agenda, as exceções aparecem como faixas hachuradas (`role="note"`) e os horários dentro delas ficam desabilitados (`rangeOnDay` em `src/lib/calendar.ts`).
 - **Agenda** (`(app)/agenda/`): os horários vêm da API em UTC e são posicionados e exibidos com `zonedParts(..., timeZone da barbearia)`. Clicar num horário livre abre o formulário com `startsAt` local (`datetime-local`). "Criar comanda" faz `POST /api/orders { appointmentId }` e redireciona para `/comandas/[id]`.
 - **Comandas** (`(app)/comandas/`): rótulos pt-BR de status e formas de pagamento em `order-labels.ts`. Os erros 422 do servidor (estoque, duplicidade, comanda fechada) aparecem no formulário.

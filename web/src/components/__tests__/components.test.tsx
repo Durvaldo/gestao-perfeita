@@ -80,12 +80,13 @@ describe("navigation", () => {
       "Exceções",
       "Comandas",
       "Financeiro",
+      "Mensagens",
       "Clientes",
       "Barbeiros",
       "Serviços",
       "Produtos",
     ]);
-    expect(NAV_ITEMS.filter((item) => item.adminOnly).map((item) => item.href)).toEqual(["/financeiro", "/servicos", "/produtos"]);
+    expect(NAV_ITEMS.filter((item) => item.adminOnly).map((item) => item.href)).toEqual(["/financeiro", "/mensagens", "/servicos", "/produtos"]);
   });
 
   test("a professional sees only their own work (SPEC-0001)", () => {

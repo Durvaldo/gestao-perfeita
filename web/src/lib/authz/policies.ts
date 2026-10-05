@@ -90,6 +90,11 @@ export const policies = {
     update: adminOrOwnBlock,
     delete: adminOrOwnBlock,
   },
+  // WhatsApp message templates (SPEC-0008): staff use them, admins edit them.
+  messageTemplate: {
+    view: isStaff,
+    update: isAdmin,
+  },
   financialEntry: {
     viewAny: isAdmin,
     view: isAdmin,

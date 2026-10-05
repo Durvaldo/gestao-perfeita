@@ -7,6 +7,8 @@ import { useConfirm } from "@/components/confirm-provider";
 import { FormError, FormField, PageHeader, PaginationBar, TableState } from "@/components/crud/crud-parts";
 import { usePaginated } from "@/components/crud/use-paginated";
 import { PhoneInput } from "@/components/phone-input";
+import { useMessageTemplates, WhatsAppLink } from "@/components/whatsapp-link";
+import { renderTemplate } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,8 +30,9 @@ type Customer = {
 type Form = { name: string; phone: string; email: string; birthDate: string; notes: string };
 const EMPTY: Form = { name: "", phone: "", email: "", birthDate: "", notes: "" };
 
-export function CustomersScreen({ canManage }: { canManage: boolean }) {
+export function CustomersScreen({ canManage, barbershop }: { canManage: boolean; barbershop: string }) {
   const confirm = useConfirm();
+  const templates = useMessageTemplates();
   const { items, meta, setPage, loading, reload } = usePaginated<Customer>("/api/customers");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
@@ -117,11 +120,11 @@ export function CustomersScreen({ canManage }: { canManage: boolean }) {
               <TableHead>Telefone</TableHead>
               <TableHead className="hidden md:table-cell">E-mail</TableHead>
               <TableHead className="hidden lg:table-cell">Nascimento</TableHead>
-              {canManage ? <TableHead className="text-end">Ações</TableHead> : null}
+              <TableHead className="text-end">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableState loading={loading} empty={items.length === 0} columns={canManage ? 5 : 4} emptyText="Nenhum cliente cadastrado." />
+            <TableState loading={loading} empty={items.length === 0} columns={5} emptyText="Nenhum cliente cadastrado." />
             {!loading &&
               items.map((customer) => (
                 <TableRow key={customer.id}>
@@ -129,18 +132,27 @@ export function CustomersScreen({ canManage }: { canManage: boolean }) {
                   <TableCell>{formatPhone(customer.phone)}</TableCell>
                   <TableCell className="hidden md:table-cell">{customer.email ?? "—"}</TableCell>
                   <TableCell className="hidden lg:table-cell">{formatDate(customer.birthDate) || "—"}</TableCell>
-                  {canManage ? (
-                    <TableCell className="text-end">
-                      <Button variant="ghost" size="sm" onClick={() => openForm(customer)}>
-                        <Pencil className="size-4" />
-                        Editar
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => remove(customer)}>
-                        <Trash2 className="size-4" />
-                        Excluir
-                      </Button>
-                    </TableCell>
-                  ) : null}
+                  <TableCell className="text-end whitespace-nowrap">
+                    <WhatsAppLink
+                      variant="ghost"
+                      phone={customer.phone}
+                      label={`WhatsApp de ${customer.name}`}
+                      size="icon"
+                      text={renderTemplate(templates.customerChat, { cliente: customer.name.split(" ")[0], barbearia: barbershop })}
+                    />
+                    {canManage ? (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => openForm(customer)}>
+                          <Pencil className="size-4" />
+                          Editar
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => remove(customer)}>
+                          <Trash2 className="size-4" />
+                          Excluir
+                        </Button>
+                      </>
+                    ) : null}
+                  </TableCell>
                 </TableRow>
               ))}
           </TableBody>

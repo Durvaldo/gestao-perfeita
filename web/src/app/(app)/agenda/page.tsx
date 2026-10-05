@@ -12,6 +12,7 @@ export default async function Page() {
       timeZone={user.tenant?.timezone ?? "America/Sao_Paulo"}
       isAdmin={user.role === "admin"}
       ownProfessionalId={user.role === "professional" ? (user.professional?.id ?? null) : null}
+      barbershop={user.tenant?.name ?? ""}
     />
   );
 }

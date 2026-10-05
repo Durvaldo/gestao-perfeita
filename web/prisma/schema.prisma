@@ -111,6 +111,7 @@ model Tenant {
   appointments     Appointment[]
   orders           Order[]
   financialEntries FinancialEntry[]
+  settings         TenantSetting[]
 
   @@map("tenants")
 }
@@ -431,4 +432,20 @@ model FinancialEntry {
 
   @@index([tenantId, entryDate])
   @@map("financial_entries")
+}
+
+// Per-tenant settings as key → JSON value (ADR-0013), e.g. the WhatsApp message
+// templates ("whatsapp.templates"). Absent key = the code's default.
+model TenantSetting {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @map("tenant_id")
+  key       String   @db.VarChar(100)
+  value     Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@map("tenant_settings")
 }

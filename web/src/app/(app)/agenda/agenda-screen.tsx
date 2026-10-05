@@ -17,6 +17,8 @@ import { addDays, dayMonthLabel, minutesToTime, startOfWeek, timeToMinutes } fro
 import { formatCurrency, formatDate } from "@/lib/format";
 import { zonedParts } from "@/lib/timezone";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { useMessageTemplates, WhatsAppLink } from "@/components/whatsapp-link";
+import { appointmentVariables, renderTemplate } from "@/lib/whatsapp";
 import { AgendaCalendar, type CalendarAppointment, type CalendarBlock, type CalendarWorkingHour } from "./agenda-calendar";
 
 type Appointment = Omit<CalendarAppointment, "customer" | "services"> & {
@@ -49,13 +51,16 @@ export function AgendaScreen({
   timeZone,
   isAdmin,
   ownProfessionalId,
+  barbershop,
 }: {
   timeZone: string;
   isAdmin: boolean;
   ownProfessionalId: number | null;
+  barbershop: string;
 }) {
   const router = useRouter();
   const confirm = useConfirm();
+  const templates = useMessageTemplates();
   // "Today" is the barbershop's calendar day.
   const today = useMemo(() => zonedParts(new Date(), timeZone).date, [timeZone]);
 
@@ -401,6 +406,21 @@ export function AgendaScreen({
                 </>
               ) : null}
             </div>
+            {detail.status === "pending" || detail.status === "confirmed" ? (
+              // Ready-made messages to the customer (SPEC-0008, level 1: wa.me, no provider).
+              <div className="flex flex-wrap gap-2 border-t pt-3">
+                <WhatsAppLink
+                  phone={detail.customer.phone}
+                  label="Confirmar no WhatsApp"
+                  text={renderTemplate(templates.appointmentConfirmation, appointmentVariables(detail, barbershop, timeZone))}
+                />
+                <WhatsAppLink
+                  phone={detail.customer.phone}
+                  label="Lembrar no WhatsApp"
+                  text={renderTemplate(templates.appointmentReminder, appointmentVariables(detail, barbershop, timeZone))}
+                />
+              </div>
+            ) : null}
           </div>
         ) : null}
       </AppModal>

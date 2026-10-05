@@ -1,4 +1,4 @@
-import { phoneDigits } from "@/lib/phone";
+import { phoneDigits } from "./phone";
 
 // Display/input formatting for pt-BR, ported from frontend/src/utils/format.js.
 

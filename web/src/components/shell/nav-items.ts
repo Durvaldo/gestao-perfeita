@@ -5,6 +5,7 @@ import {
   Coins,
   type LucideIcon,
   LayoutDashboard,
+  MessageCircle,
   Receipt,
   Scissors,
   Sparkles,
@@ -29,6 +30,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/excecoes", label: "Exceções", icon: CalendarOff, professionalLabel: "Minhas folgas" },
   { href: "/comandas", label: "Comandas", icon: Receipt },
   { href: "/financeiro", label: "Financeiro", icon: Coins, adminOnly: true },
+  // WhatsApp message templates (SPEC-0008).
+  { href: "/mensagens", label: "Mensagens", icon: MessageCircle, adminOnly: true },
   { href: "/clientes", label: "Clientes", icon: Users },
   // A professional only sees their own record here, to manage their working hours (SPEC-0001).
   { href: "/barbeiros", label: "Barbeiros", icon: Scissors, professionalLabel: "Meus horários" },

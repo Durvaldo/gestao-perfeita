@@ -8,5 +8,5 @@ export const metadata: Metadata = { title: "Clientes · Agenda da Barbearia" };
 export default async function CustomersPage() {
   // The layout already guarantees a signed-in user with a tenant.
   const user = (await getCurrentUser())!;
-  return <CustomersScreen canManage={can(user, "customer", "create")} />;
+  return <CustomersScreen canManage={can(user, "customer", "create")} barbershop={user.tenant?.name ?? ""} />;
 }

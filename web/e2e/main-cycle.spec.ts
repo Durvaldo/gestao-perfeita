@@ -205,6 +205,22 @@ test("a professional registers a commitment and the agenda closes that period (S
   await expect(page.getByRole("button", { name: `${dayMonthLabel(nextMonday)} 16:00` })).toBeEnabled();
 });
 
+test("WhatsApp buttons use the barbershop's templates (SPEC-0008)", async ({ page }) => {
+  await login(page, "admin@barbearia-centro.com");
+
+  await page.getByRole("link", { name: "Mensagens" }).click();
+  await page.locator("#template-customerChat").fill("Fala, {cliente}! Aqui é da {barbearia}.");
+  await expect(page.getByText("Prévia: Fala, João! Aqui é da Barbearia Centro.")).toBeVisible();
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Mensagens salvas.")).toBeVisible();
+
+  await page.goto("/clientes");
+  const link = page.getByRole("link", { name: "WhatsApp de João Pereira" });
+  const expected = `https://wa.me/5511911110001?text=${encodeURIComponent("Fala, João! Aqui é da Barbearia Centro.")}`;
+  await expect(link).toHaveAttribute("href", expected);
+  await expect(link).toHaveAttribute("target", "_blank");
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");
