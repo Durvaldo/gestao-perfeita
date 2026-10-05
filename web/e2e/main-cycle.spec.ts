@@ -279,6 +279,32 @@ test("the barbershop's public site works without login (SPEC-0007)", async ({ pa
   await expect(page.getByText("Página não encontrada")).toBeVisible();
 });
 
+test("the admin customizes the site: logo, about, and turning it off (SPEC-0007)", async ({ page }) => {
+  // A real 1×1 PNG, so the browser can render it.
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYPj/HwADAgH/AtbcRwAAAABJRU5ErkJggg==", "base64");
+  await login(page, "admin@barbearia-centro.com");
+
+  await page.getByRole("link", { name: "Meu site" }).click();
+  await page.getByLabel("Enviar logo").setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
+  await expect(page.getByRole("img", { name: "Logo" })).toBeVisible();
+  await page.locator("#about").fill("Tradição em cortes desde 1990.");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Site atualizado.")).toBeVisible();
+
+  await page.goto("/barbearia-centro");
+  await expect(page.getByRole("region", { name: "Sobre" })).toContainText("Tradição em cortes desde 1990.");
+  const logo = page.getByRole("img", { name: "Logo da Barbearia Centro" });
+  await expect(logo).toHaveAttribute("src", /\/api\/files\/[0-9a-f-]{36}/);
+  await expect.poll(() => logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1);
+
+  await page.goto("/meu-site");
+  await page.getByRole("switch", { name: "Site no ar" }).click();
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Site atualizado.")).toBeVisible();
+  await page.goto("/barbearia-centro");
+  await expect(page.getByText("Página não encontrada")).toBeVisible();
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");

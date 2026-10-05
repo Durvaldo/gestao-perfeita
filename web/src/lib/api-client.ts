@@ -24,10 +24,12 @@ const FALLBACK = "Não foi possível concluir a operação. Tente novamente.";
 export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<ApiResult<T>> {
   let response: Response;
   try {
+    // FormData (file uploads) goes as multipart, with the boundary set by the browser.
+    const isForm = typeof FormData !== "undefined" && options.body instanceof FormData;
     response = await fetch(path, {
       method: options.method ?? "GET",
-      headers: options.body === undefined ? undefined : { "content-type": "application/json" },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      headers: options.body === undefined || isForm ? undefined : { "content-type": "application/json" },
+      body: options.body === undefined ? undefined : isForm ? (options.body as FormData) : JSON.stringify(options.body),
     });
   } catch {
     return { ok: false, status: 0, message: "Sem conexão com o servidor.", errors: {} };

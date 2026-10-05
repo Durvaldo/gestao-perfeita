@@ -100,6 +100,10 @@ export const policies = {
     create: isAdmin,
     delete: isAdmin,
   },
+  // The public site's customization ("Meu site", SPEC-0007): admins only.
+  siteSettings: {
+    update: isAdmin,
+  },
   financialEntry: {
     viewAny: isAdmin,
     view: isAdmin,
