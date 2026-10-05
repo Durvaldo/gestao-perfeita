@@ -516,7 +516,10 @@ sessões e entre pessoas.
 
 ## Documentos de produto e roadmap deste projeto
 
-Este projeto não usa specs formais (`docs/specs/`). A camada equivalente a "scope/roadmap" é:
+Este projeto usa specs formais em [`docs/specs/`](specs/) desde 2026-10-04 (índice, status e ordem sugerida
+em [`specs/README.md`](specs/README.md)). Tasks novas de evolução de produto devem nascer de uma SPEC `aprovada`.
+As tasks `TASK-0001`…`TASK-0021` são anteriores às specs e referenciam o roadmap direto. A camada de
+"scope/roadmap" acima das specs é:
 
 - [`docs/SCOPE.md`](SCOPE.md) — escopo atual e direção (mantido pelo usuário/time).
 - [`docs/ESPECIFICACAO.md`](ESPECIFICACAO.md) — especificação de produto (módulos funcionais, perfis, multi-tenant).

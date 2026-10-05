@@ -17,7 +17,7 @@ Leia [`docs/SCOPE.md`](docs/SCOPE.md) antes de propor mudanças de arquitetura o
 | Diretório | Tipo | Descrição | Instruções |
 |---|---|---|---|
 | `web/` | Projeto npm (Next.js 16, TypeScript) | A aplicação: API (Route Handlers), regras de negócio, multi-tenancy, autenticação e todas as telas do painel | [web/AGENTS.md](web/AGENTS.md) |
-| `docs/` | Documentação | Especificação, modelagem, roadmap, benchmark, ADRs (`decisions/`) e tasks (`tasks/`) | [docs/AGENTS.md](docs/AGENTS.md) |
+| `docs/` | Documentação | Especificação, modelagem, roadmap, benchmark, specs (`specs/`), ADRs (`decisions/`) e tasks (`tasks/`) | [docs/AGENTS.md](docs/AGENTS.md) |
 
 Não existe build raiz: o único projeto de código é `web/`, com o próprio `package.json`.
 
