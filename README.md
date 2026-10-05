@@ -105,6 +105,14 @@ O seed cria duas barbearias de exemplo. Todos os usuários usam a senha **`senha
 
 ---
 
+## Homologação
+
+A homologação está na Vercel, em **https://gestao-perfeita.vercel.app**, com banco Prisma Postgres. Todo push no `main` publica uma versão nova, e as migrations pendentes são aplicadas sozinhas antes do build ([ADR-0016](docs/decisions/0016-migrations-no-build-de-producao-da-vercel.md)). Detalhes em [`web/AGENTS.md`](web/AGENTS.md#deploy-homologação-na-vercel).
+
+> Os logins de desenvolvimento também existem na homologação, com a mesma senha pública. Não use dados reais lá.
+
+---
+
 ## Comandos úteis (dentro de `web/`)
 
 | Comando | O que faz |
@@ -136,7 +144,7 @@ O seed cria duas barbearias de exemplo. Todos os usuários usam a senha **`senha
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | Visão geral, regras do projeto (código em inglês, documentação em português, decisões, testes, tarefas) |
 | [`web/AGENTS.md`](web/AGENTS.md) | Guia técnico da aplicação: estrutura, convenções da API e das telas, multi-empresa, permissões, testes e endpoints |
-| [`docs/decisions/`](docs/decisions/) | Decisões de arquitetura (ADRs 0001–0011), com o porquê de cada escolha |
+| [`docs/decisions/`](docs/decisions/) | Decisões de arquitetura (ADRs 0001–0016), com o porquê de cada escolha |
 | [`docs/tasks/`](docs/tasks/) | Tarefas do projeto e o andamento de cada uma |
 | [`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md) · [`docs/ROADMAP_IMPLEMENTACAO.md`](docs/ROADMAP_IMPLEMENTACAO.md) | Especificação do produto e roadmap |
 

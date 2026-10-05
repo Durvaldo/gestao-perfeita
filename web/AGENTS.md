@@ -103,6 +103,16 @@ Fonte: `package.json`.
 - ⚠️ **Depois de mudar o schema e gerar o client, reinicie o `npm run dev`.** O client Prisma fica em `globalThis` entre hot reloads (`src/lib/db.ts`), então o servidor de dev continua usando o client antigo e quebra com `Unknown field ...` nos campos novos. Já aconteceu duas vezes.
 - O `migrate dev` recusa rodar em modo não interativo quando a migration perde dados (ex.: remover coluna). Nesse caso, gere o SQL com `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script` dentro de uma pasta nova em `prisma/migrations/`, revise e aplique com `npm run db:deploy`.
 - Typecheck: `npx tsc --noEmit` (o `next build` também checa tipos).
+
+## Deploy (homologação na Vercel)
+
+[ADR-0016](../docs/decisions/0016-migrations-no-build-de-producao-da-vercel.md).
+
+- Projeto Vercel `gestao-perfeita` (Root Directory `web`), publicado pelo GitHub a cada push no `main`. Endereço público: `https://gestao-perfeita.vercel.app`; os demais endereços ficam atrás do login da Vercel.
+- Banco: Prisma Postgres conectado pela integração da Vercel. A integração cria `DATABASE_URL` (conexão direta `postgres://`) em Production e Preview, **no mesmo banco**. Também precisam existir `BETTER_AUTH_SECRET` e `BETTER_AUTH_URL` (= o endereço público; com outro valor o login responde `INVALID_ORIGIN`).
+- **Migrations**: o deploy de produção aplica as migrations pendentes sozinho (`vercel-build` → `scripts/vercel-build.ts`: `prisma migrate deploy` e depois `next build`). O preview não migra. Migration com erro derruba o deploy, e a versão anterior continua no ar. Como a migration roda antes do código novo entrar, ela precisa ser compatível com o código que está no ar (remover ou renomear: em dois deploys).
+- O seed não roda no deploy. Para rodar algo na mão contra o banco da homologação, ponha a `DATABASE_URL` do painel (Storage → banco → `.env.local`) em `web/.env.homolog` (ignorado pelo Git) e carregue o arquivo antes do comando. O `vercel env pull` não serve: as variáveis do banco são sensíveis e vêm vazias.
+- O deploy pelo CLI de dentro de `web/` falha ("Root Directory web does not exist"). Para republicar sem push, use `npx vercel redeploy <url do último deploy> --target production`.
 - ⚠️ O `npm audit` aponta vulnerabilidades *high* em `braces`, vindas de `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` (só ferramenta de lint, em dev). O `npm audit fix --force` sugerido **rebaixaria** o `eslint-config-next` para a 14, então não aplique. Reavalie quando sair uma versão nova do `eslint-config-next`.
 
 ## Convenções
