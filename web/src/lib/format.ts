@@ -1,3 +1,5 @@
+import { phoneDigits } from "@/lib/phone";
+
 // Display/input formatting for pt-BR, ported from frontend/src/utils/format.js.
 
 /**
@@ -64,4 +66,21 @@ export function initials(name: string | null | undefined): string {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+}
+
+/**
+ * Brazilian phone mask (SPEC-0005), also for partial values while typing:
+ * "11987654321" → "(11) 98765-4321", "1133334444" → "(11) 3333-4444",
+ * "119876" → "(11) 9876". Phones are stored as digits only.
+ */
+export function formatPhone(value: string | null | undefined): string {
+  if (!value) return "";
+  const digits = phoneDigits(value).slice(0, 11);
+  if (digits.length === 0) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  const ddd = digits.slice(0, 2);
+  const rest = digits.slice(2);
+  // 9 digits after the DDD = mobile (5-4); up to 8 = landline (4-4).
+  const split = rest.length === 9 ? 5 : 4;
+  return rest.length <= split ? `(${ddd}) ${rest}` : `(${ddd}) ${rest.slice(0, split)}-${rest.slice(split)}`;
 }

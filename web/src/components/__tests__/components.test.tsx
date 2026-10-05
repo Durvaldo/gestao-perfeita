@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ConfirmProvider, useConfirm } from "@/components/confirm-provider";
 import { DecimalInput } from "@/components/decimal-input";
+import { PhoneInput } from "@/components/phone-input";
 import { isActive, NAV_ITEMS, visibleNavItems } from "@/components/shell/nav-items";
 
 afterEach(cleanup);
@@ -101,5 +102,28 @@ describe("navigation", () => {
     expect(isActive("/clientes", "/")).toBe(false);
     expect(isActive("/comandas/12", "/comandas")).toBe(true);
     expect(isActive("/comandasx", "/comandas")).toBe(false);
+  });
+});
+
+function PhoneHarness() {
+  const [value, setValue] = useState("");
+  return (
+    <>
+      <PhoneInput aria-label="telefone" value={value} onChange={setValue} />
+      <span data-testid="phone-state">{value}</span>
+    </>
+  );
+}
+
+describe("PhoneInput (SPEC-0005)", () => {
+  test("applies the mask while typing", () => {
+    render(<PhoneHarness />);
+    const input = screen.getByLabelText("telefone") as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: "11987654321" } });
+    expect(input.value).toBe("(11) 98765-4321");
+
+    fireEvent.change(input, { target: { value: "(11) 3333-4444" } });
+    expect(input.value).toBe("(11) 3333-4444");
   });
 });

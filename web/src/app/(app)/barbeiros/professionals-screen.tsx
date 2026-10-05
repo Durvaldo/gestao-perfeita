@@ -7,6 +7,7 @@ import { useConfirm } from "@/components/confirm-provider";
 import { FormError, FormField, PageHeader, PaginationBar, TableState } from "@/components/crud/crud-parts";
 import { usePaginated } from "@/components/crud/use-paginated";
 import { DecimalInput } from "@/components/decimal-input";
+import { PhoneInput } from "@/components/phone-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -230,7 +231,7 @@ export function ProfessionalsScreen({ canManage, ownProfessionalId }: { canManag
             <Input id="password" type="password" autoComplete="new-password" value={createForm.password} onChange={set("password")} />
           </FormField>
           <FormField id="phone" label="Telefone" errors={errors.phone}>
-            <Input id="phone" value={createForm.phone} onChange={set("phone")} />
+            <PhoneInput id="phone" value={createForm.phone} onChange={(phone) => setCreateForm((current) => ({ ...current, phone }))} />
           </FormField>
           <FormField id="defaultCommissionRate" label="Comissão padrão (%)" errors={errors.defaultCommissionRate}>
             <DecimalInput

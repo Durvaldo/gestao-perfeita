@@ -166,6 +166,21 @@ test("product stock mode: 'Registrar quantidade' or 'Estoque livre' (SPEC-0002)"
   await expect(page.getByRole("radio", { name: /Estoque livre/ })).toBeChecked();
 });
 
+test("phones are masked in the form and in the table (SPEC-0005)", async ({ page }) => {
+  await login(page, "admin@barbearia-centro.com");
+  await page.goto("/clientes");
+
+  // Seeded phones are stored as digits and shown with the mask.
+  await expect(page.getByRole("row", { name: /João Pereira/ })).toContainText("(11) 91111-0001");
+
+  await page.getByRole("button", { name: "Novo cliente" }).click();
+  await page.locator("#name").fill("Cliente Fone E2E");
+  await page.locator("#phone").pressSequentially("11987654321");
+  await expect(page.locator("#phone")).toHaveValue("(11) 98765-4321");
+  await page.getByRole("button", { name: "Adicionar" }).click();
+  await expect(page.getByRole("row", { name: /Cliente Fone E2E/ })).toContainText("(11) 98765-4321");
+});
+
 test("wrong password shows the pt-BR error", async ({ page }) => {
   await page.goto("/login");
   await page.locator("#email").fill("admin@barbearia-centro.com");

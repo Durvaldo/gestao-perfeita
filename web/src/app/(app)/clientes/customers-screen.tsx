@@ -6,13 +6,14 @@ import { AppModal } from "@/components/app-modal";
 import { useConfirm } from "@/components/confirm-provider";
 import { FormError, FormField, PageHeader, PaginationBar, TableState } from "@/components/crud/crud-parts";
 import { usePaginated } from "@/components/crud/use-paginated";
+import { PhoneInput } from "@/components/phone-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api-client";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatPhone } from "@/lib/format";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 type Customer = {
@@ -125,7 +126,7 @@ export function CustomersScreen({ canManage }: { canManage: boolean }) {
               items.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
+                  <TableCell>{formatPhone(customer.phone)}</TableCell>
                   <TableCell className="hidden md:table-cell">{customer.email ?? "—"}</TableCell>
                   <TableCell className="hidden lg:table-cell">{formatDate(customer.birthDate) || "—"}</TableCell>
                   {canManage ? (
@@ -170,7 +171,7 @@ export function CustomersScreen({ canManage }: { canManage: boolean }) {
             <Input id="name" value={form.name} onChange={set("name")} />
           </FormField>
           <FormField id="phone" label="Telefone" errors={errors.phone}>
-            <Input id="phone" value={form.phone} onChange={set("phone")} />
+            <PhoneInput id="phone" value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
           </FormField>
           <FormField id="birthDate" label="Nascimento" errors={errors.birthDate}>
             <Input id="birthDate" type="date" value={form.birthDate} onChange={set("birthDate")} />

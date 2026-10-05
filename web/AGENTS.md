@@ -40,9 +40,9 @@ Fonte: `package.json`.
   - `(auth)/login/`: tela de login (`login-form.tsx`, campos não controlados + `FormData`, `method="post"`).
   - `(app)/`: painel. O **`layout.tsx` é a guarda de rotas** (sem sessão → `/login`; sem tenant → aviso) e monta o `AppShell`. `page.tsx` = dashboard (Server Component que chama `buildDashboard()` dentro de `runWithTenant`); `agenda/` (calendário semana/dia), `comandas/` e `comandas/[id]/`, `financeiro/` (só admin), `clientes/`, `barbeiros/`, `servicos/`, `produtos/`; e `componentes/` (exemplos dos componentes base, só em dev).
 - `src/components/ui/`: componentes shadcn (gerados; podem ser editados).
-- `src/components/`: `app-modal.tsx`, `confirm-provider.tsx` (`useConfirm`), `decimal-input.tsx`, `charts/bar-list.tsx` (barras horizontais de série única em HTML puro), `shell/` (`app-shell.tsx` com sidebar, sheet mobile e menu do usuário; `nav-items.ts`; `no-tenant-notice.tsx`; `sign-out-button.tsx`).
+- `src/components/`: `app-modal.tsx`, `confirm-provider.tsx` (`useConfirm`), `decimal-input.tsx`, `phone-input.tsx` (telefone com máscara, SPEC-0005), `charts/bar-list.tsx` (barras horizontais de série única em HTML puro), `shell/` (`app-shell.tsx` com sidebar, sheet mobile e menu do usuário; `nav-items.ts`; `no-tenant-notice.tsx`; `sign-out-button.tsx`).
 - `src/lib/calendar.ts`: helpers de dia (`addDays`, `startOfWeek`, `weekdayIndex`, rótulos) usados pela agenda.
-- `src/lib/format.ts` (formatação pt-BR), `src/lib/toast.ts` (`toastSuccess`, `toastError`, `apiErrorMessage`), `src/lib/auth-client.ts` (Better Auth no browser).
+- `src/lib/format.ts` (formatação pt-BR; `formatPhone` aplica a máscara de telefone), `src/lib/toast.ts` (`toastSuccess`, `toastError`, `apiErrorMessage`), `src/lib/auth-client.ts` (Better Auth no browser).
 - `src/lib/api-client.ts`: `api<T>(path, { method, body })` → `{ ok, status, data }` ou `{ ok: false, status, message, errors }` (nunca lança em erro HTTP). Tipo `Paginated<T>`.
 - `src/components/crud/`: `usePaginated(path)` (lista paginada + `reload`) e `crud-parts.tsx` (`PageHeader`, `FormField` com erros do 422, `FormError`, `TableState`, `PaginationBar`).
 - Telas de cadastro: `src/app/(app)/{clientes,servicos,produtos,barbeiros}/`. Cada uma tem um `page.tsx` (servidor: calcula `canManage` com `can()`) e um `*-screen.tsx` (cliente). Barbeiros inclui `working-hours-dialog.tsx`.
